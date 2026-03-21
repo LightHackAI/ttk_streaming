@@ -15,6 +15,7 @@ class LoginForm(forms.Form):
         label='Пароль',
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Введите пароль',
+            'autocomplete': 'new-password'
         })
     )
 
@@ -24,6 +25,7 @@ class RegistrationForm(forms.ModelForm):
         label='Пароль',
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Придумайте пароль',
+            'autocomplete': 'new-password'
         }),
         validators=[
             RegexValidator(
@@ -36,6 +38,7 @@ class RegistrationForm(forms.ModelForm):
         label='Подтверждение пароля',
         widget=forms.PasswordInput(attrs={
             'placeholder': 'Повторите пароль',
+            'autocomplete': 'new-password'
         })
     )
 

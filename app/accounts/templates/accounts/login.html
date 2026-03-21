@@ -8,9 +8,11 @@
 
         {% if messages %}
             {% for message in messages %}
-                <div class="error-message" style="background: #fee2e2; border-left: 4px solid #df3b3b; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #991b1b; font-size: 14px;">
-                    {{ message }}
-                </div>
+                {% if forloop.first %}
+                    <div class="error-message" style="background: #fee2e2; border-left: 4px solid #df3b3b; padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #991b1b; font-size: 14px;">
+                        {{ message }}
+                    </div>
+                {% endif %}
             {% endfor %}
         {% endif %}
 

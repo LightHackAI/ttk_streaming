@@ -21,8 +21,7 @@ def login(request):
 
             if user is not None:
                 auth_login(request, user)
-                messages.success(request, f'Добро пожаловать, {user.full_name}!')
-                return redirect('player:player_page')
+                return redirect('player:admin_panel')
             else:
                 messages.error(request, 'Неверный логин или пароль')
         else:
@@ -45,7 +44,6 @@ def register(request):
         if form.is_valid():
             try:
                 user = form.save()
-                messages.success(request, 'Регистрация прошла успешно! Теперь вы можете войти.')
                 return redirect('accounts:login')
             except Exception as e:
                 messages.error(request, f'Ошибка при регистрации: {str(e)}')

@@ -61,7 +61,6 @@
         }
 
         .logo-icon svg:hover {
-            transform: scale(1.05);
             color: #c92a2a;
         }
 
@@ -494,12 +493,14 @@
                 <!-- Центральная часть с навигацией -->
                 <div class="navbar-center">
                     <div class="nav-modules">
-                        <a href="" class="module-link {% if active_module == 'admin' %}active{% endif %}">
+                        {% if request.user.role == 'admin' %}
+                        <a href="{% url 'player:admin_panel' %}" class="module-link {% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 12c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/>
                             </svg>
                             <span>Администрирование</span>
                         </a>
+                        {% endif %}
                         <a href="" class="module-link {% if active_module == 'player' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path d="M3 12h3l3-9 3 18 3-9h3"/>
