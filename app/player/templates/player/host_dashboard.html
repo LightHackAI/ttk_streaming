@@ -1,0 +1,1598 @@
+{% extends 'player/base.html' %}
+{% load static %}
+
+{% block title %}Раздел ведущего{% endblock %}
+
+{% block extra_css %}
+<style>
+    .host-container {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .host-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+    }
+
+    .host-main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .host-card {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .host-card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .host-card-header h2 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .host-card-body {
+        padding: 20px;
+    }
+
+    /* Управление эфиром */
+    .broadcast-controls {
+        background: white;
+    }
+
+    .broadcast-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .broadcast-status {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .broadcast-status.active {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-broadcast {
+        background: #df3b3b;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        font-size: 14px;
+    }
+
+    .btn-broadcast.stop {
+        background: #64748b;
+    }
+
+    .btn-broadcast:hover {
+        opacity: 0.9;
+    }
+
+    .broadcast-controls-group {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .control-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        padding: 8px 0;
+    }
+
+    .control-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .control-toggle {
+        width: 44px;
+        height: 24px;
+        background: #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.3s;
+    }
+
+    .control-toggle.active {
+        background: #df3b3b;
+    }
+
+    .control-toggle::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: all 0.3s;
+    }
+
+    .control-toggle.active::after {
+        left: 22px;
+    }
+
+    .volume-slider {
+        flex: 1;
+        margin-left: 16px;
+    }
+
+    .volume-slider input {
+        width: 100%;
+        accent-color: #df3b3b;
+    }
+
+    .playlist-select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        margin-top: 8px;
+    }
+
+    .playlist-select:focus {
+        outline: none;
+        border-color: #df3b3b;
+    }
+
+    .webcam-preview-small {
+        background: #1e293b;
+        border-radius: 8px;
+        overflow: hidden;
+        aspect-ratio: 16/9;
+        margin-top: 16px;
+        position: relative;
+    }
+
+    .webcam-preview-small video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .fullscreen-btn-small {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 10;
+    }
+
+    /* Остальные стили остаются без изменений */
+    .playlist-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .playlist-item:hover {
+        background: #fef2f2;
+    }
+
+    .playlist-item.active {
+        background: #fef2f2;
+        border-left: 2px solid #df3b3b;
+    }
+
+    .playlist-name {
+        font-weight: 500;
+        font-size: 14px;
+        color: #1e293b;
+        flex: 1;
+    }
+
+    .playlist-badge {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #475569;
+        margin: 0 8px;
+    }
+
+    .playlist-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .playlist-action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 2px 6px;
+        color: #94a3b8;
+        transition: all 0.2s;
+    }
+
+    .playlist-action-btn:hover {
+        color: #df3b3b;
+    }
+
+    .message-item {
+        padding: 12px;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+
+    .message-item:hover {
+        background: #f8fafc;
+    }
+
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+    }
+
+    .message-user {
+        font-weight: 600;
+        font-size: 13px;
+        color: #df3b3b;
+    }
+
+    .message-time {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .message-content {
+        color: #334155;
+        font-size: 13px;
+        margin-bottom: 10px;
+        word-break: break-word;
+    }
+
+    .message-status {
+        display: flex;
+        gap: 8px;
+    }
+
+    .status-btn {
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 11px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .status-new {
+        color: #d97706;
+        border-color: #fed7aa;
+    }
+
+    .status-new.active {
+        background: #fef3c7;
+        border-color: #d97706;
+    }
+
+    .status-progress {
+        color: #2563eb;
+        border-color: #bfdbfe;
+    }
+
+    .status-progress.active {
+        background: #dbeafe;
+        border-color: #2563eb;
+    }
+
+    .status-completed {
+        color: #059669;
+        border-color: #a7f3d0;
+    }
+
+    .status-completed.active {
+        background: #d1fae5;
+        border-color: #059669;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .media-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .media-item:hover {
+        background: #fef2f2;
+        border-color: #df3b3b;
+    }
+
+    .media-title {
+        font-weight: 500;
+        font-size: 13px;
+        margin-bottom: 4px;
+        color: #1e293b;
+    }
+
+    .media-type {
+        font-size: 10px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .media-duration {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .upload-btn, .record-btn {
+        background: #df3b3b;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 13px;
+        border: none;
+        font-weight: 500;
+    }
+
+    .record-btn {
+        background: #10b981;
+        margin-right: 8px;
+    }
+
+    .upload-btn:hover, .record-btn:hover {
+        opacity: 0.9;
+    }
+
+    .recording-active {
+        background: #ef4444;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+
+    .recording-timer {
+        display: inline-block;
+        margin-left: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #ef4444;
+    }
+
+    .tab-buttons {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .tab-btn {
+        padding: 8px 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #64748b;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn.active {
+        color: #df3b3b;
+        border-bottom-color: #df3b3b;
+    }
+
+    .tab-pane {
+        display: none;
+    }
+
+    .tab-pane.active {
+        display: block;
+    }
+
+    .toggle-controls {
+        display: flex;
+        gap: 12px;
+    }
+
+    .toggle-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+        background: #df3b3b;
+        color: white;
+        border-color: #df3b3b;
+    }
+
+    .playlist-items-container {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .playlist-item-file {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .playlist-item-info {
+        flex: 1;
+        cursor: pointer;
+    }
+
+    .playlist-item-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .playlist-item-duration {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    .playlist-item-remove {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px 8px;
+    }
+
+    .playlist-item-remove:hover {
+        color: #ef4444;
+    }
+
+    /* Модальное окно плеера */
+    .player-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .player-modal-content {
+        max-width: 90%;
+        max-height: 90%;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: default;
+    }
+
+    .player-modal-content video,
+    .player-modal-content audio {
+        max-width: 100%;
+        max-height: 80vh;
+        display: block;
+    }
+
+    .player-modal-content audio {
+        width: 500px;
+        padding: 20px;
+    }
+
+    .player-close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: white;
+        font-size: 40px;
+        cursor: pointer;
+        z-index: 10002;
+    }
+
+    .player-close:hover {
+        color: #df3b3b;
+    }
+
+    /* Модальное окно для названия записи */
+    .name-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 10003;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .name-modal-content {
+        background: white;
+        border-radius: 12px;
+        width: 400px;
+        max-width: 90%;
+        padding: 24px;
+    }
+
+    .name-modal-content h3 {
+        margin: 0 0 16px 0;
+        font-size: 18px;
+        color: #1e293b;
+    }
+
+    .name-modal-content input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+
+    .name-modal-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .name-modal-buttons button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .name-modal-buttons .save-btn {
+        background: #df3b3b;
+        color: white;
+    }
+
+    .name-modal-buttons .cancel-btn {
+        background: #f1f5f9;
+        color: #475569;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="host-container">
+    <div class="host-sidebar">
+        <!-- Управление эфиром (обновленное) -->
+        <div class="host-card broadcast-controls">
+            <div class="host-card-header">
+                <h2>Управление эфиром</h2>
+                <div id="broadcastStatusBadge" class="broadcast-status">Эфир неактивен</div>
+            </div>
+            <div class="host-card-body">
+                <button id="broadcastBtn" class="btn-broadcast" onclick="toggleBroadcast()">Начать эфир</button>
+
+                <!-- Элементы управления, появляющиеся после начала эфира -->
+                <div id="broadcastControls" style="display: none;">
+                    <!-- Микрофон и камера -->
+                    <div class="broadcast-controls-group">
+                        <div class="control-row">
+                            <span class="control-label">🎤 Микрофон</span>
+                            <div id="micToggle" class="control-toggle" onclick="toggleMic()"></div>
+                        </div>
+                        <div class="control-row">
+                            <span class="control-label">📹 Камера</span>
+                            <div id="camToggle" class="control-toggle" onclick="toggleCam()"></div>
+                        </div>
+                    </div>
+
+                    <!-- Выбор плейлиста -->
+                    <div class="broadcast-controls-group">
+                        <div class="control-label">🎵 Фоновый плейлист</div>
+                        <select id="broadcastPlaylistSelect" class="playlist-select" onchange="changeBroadcastPlaylist()">
+                            <option value="">Без фоновой музыки</option>
+                        </select>
+                    </div>
+
+                    <!-- Основная громкость -->
+                    <div class="broadcast-controls-group">
+                        <div class="control-row">
+                            <span class="control-label">🔊 Громкость эфира</span>
+                            <div class="volume-slider">
+                                <input type="range" id="broadcastVolume" min="0" max="100" value="50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Громкость плейлиста (появляется при выборе плейлиста) -->
+                    <div id="playlistVolumeGroup" class="broadcast-controls-group" style="display: none;">
+                        <div class="control-row">
+                            <span class="control-label">🎵 Громкость фона</span>
+                            <div class="volume-slider">
+                                <input type="range" id="playlistVolume" min="0" max="100" value="25">
+                                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">(в 2 раза тише основной)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Предпросмотр камеры -->
+                    <div id="webcamPreviewContainer" class="webcam-preview-small" style="display: none;">
+                        <video id="localVideo" autoplay muted playsinline></video>
+                        <button class="fullscreen-btn-small" onclick="toggleFullscreen()">⛶ Во весь экран</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Мои плейлисты -->
+        <div class="host-card">
+            <div class="host-card-header">
+                <h2>Мои плейлисты</h2>
+            </div>
+            <div class="host-card-body">
+                <button class="upload-btn" onclick="createPlaylist()" style="background:#64748b; width:100%;">+ Создать плейлист</button>
+                <div id="playlistsList" style="margin-top: 12px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="host-main">
+        <!-- Вкладки -->
+        <div class="host-card">
+            <div class="host-card-header">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="media">Медиатека</button>
+                    <button class="tab-btn" data-tab="recordings">Мои записи</button>
+                    <button class="tab-btn" data-tab="messages">Сообщения</button>
+                </div>
+            </div>
+            <div class="host-card-body">
+                <div id="mediaTab" class="tab-pane active">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Загрузить файл</button>
+                    <input type="file" id="fileInput" class="file-input" accept="audio/*,video/*" onchange="uploadMedia(this)">
+                    <div id="mediaGrid" class="media-grid" style="margin-top: 16px;"></div>
+                </div>
+
+                <div id="recordingsTab" class="tab-pane">
+                    <button class="record-btn" id="startRecordBtn" onclick="startRecording()">Записать аудио</button>
+                    <button class="record-btn recording-active" id="stopRecordBtn" onclick="stopRecording()" style="display:none;">Остановить запись</button>
+                    <span id="recordingTimer" class="recording-timer" style="display: none;">0:00</span>
+                    <div id="recordingsList" style="margin-top: 16px;"></div>
+                </div>
+
+                <div id="messagesTab" class="tab-pane">
+                    <div class="toggle-controls">
+                        <button class="toggle-btn" onclick="toggleArchived()" id="archivedToggle">Показать архив</button>
+                    </div>
+                    <div id="messagesList" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Текущий плейлист -->
+        <div class="host-card">
+            <div class="host-card-header">
+                <h2>Текущий плейлист</h2>
+                <div class="toggle-controls">
+                    <button class="toggle-btn" id="shuffleBtn" onclick="toggleShuffle()">Перемешать</button>
+                    <button class="toggle-btn" id="loopBtn" onclick="toggleLoop()">Зациклить</button>
+                </div>
+            </div>
+            <div class="host-card-body">
+                <div id="currentPlaylistName" style="font-size:13px; color:#64748b; margin-bottom:12px;"></div>
+                <div id="currentPlaylistItems" class="playlist-items-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let mediaRecorder = null;
+let audioChunks = [];
+let currentPlaylistId = null;
+let showArchived = false;
+let localStream = null;
+let isWebcamOn = false;
+let isMicOn = false;
+let isBroadcastActive = false;
+let recordingStartTime = null;
+let recordingInterval = null;
+let currentPlayingVideoId = null;
+let currentRecordingBlob = null; // Добавляем переменную для хранения blob
+
+// ========== Запись аудио с таймером ==========
+
+let recordingTimerInterval = null;
+let recordingSeconds = 0;
+let mediaStreamRecord = null;
+
+function formatTimer(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+async function startRecording() {
+    try {
+        mediaStreamRecord = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(mediaStreamRecord);
+        audioChunks = [];
+        recordingSeconds = 0;
+        currentRecordingBlob = null; // Сбрасываем предыдущий blob
+
+        // Показываем таймер
+        const timerSpan = document.getElementById('recordingTimer');
+        timerSpan.style.display = 'inline-block';
+        timerSpan.textContent = '0:00';
+
+        recordingTimerInterval = setInterval(() => {
+            recordingSeconds++;
+            timerSpan.textContent = formatTimer(recordingSeconds);
+        }, 1000);
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = async () => {
+            clearInterval(recordingTimerInterval);
+            const timerSpan = document.getElementById('recordingTimer');
+            timerSpan.style.display = 'none';
+            timerSpan.textContent = '0:00';
+
+            // Создаем blob из собранных данных
+            currentRecordingBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+            // Показываем модальное окно для ввода названия
+            showNameModal();
+
+            if (mediaStreamRecord) {
+                mediaStreamRecord.getTracks().forEach(track => track.stop());
+                mediaStreamRecord = null;
+            }
+        };
+
+        mediaRecorder.start();
+        document.getElementById('startRecordBtn').style.display = 'none';
+        document.getElementById('stopRecordBtn').style.display = 'inline-block';
+    } catch (err) {
+        console.error('Ошибка доступа к микрофону:', err);
+        alert('Не удалось получить доступ к микрофону. Проверьте разрешения.');
+    }
+}
+
+function showNameModal() {
+    const defaultName = `Запись ${new Date().toLocaleString()}`;
+
+    // Удаляем существующее модальное окно, если есть
+    const existingModal = document.querySelector('.name-modal');
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement('div');
+    modal.className = 'name-modal';
+    modal.innerHTML = `
+        <div class="name-modal-content">
+            <h3>Сохранить запись</h3>
+            <input type="text" id="recordingName" value="${escapeHtml(defaultName)}" placeholder="Название записи">
+            <div class="name-modal-buttons">
+                <button class="cancel-btn" onclick="closeNameModal()">Отмена</button>
+                <button class="save-btn" onclick="saveRecording()">Сохранить</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Фокус на поле ввода
+    setTimeout(() => {
+        const input = document.getElementById('recordingName');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    }, 100);
+}
+
+function closeNameModal() {
+    const modal = document.querySelector('.name-modal');
+    if (modal) modal.remove();
+    currentRecordingBlob = null; // Очищаем blob при отмене
+}
+
+async function saveRecording() {
+    const input = document.getElementById('recordingName');
+    const title = input ? input.value.trim() : '';
+
+    if (!title) {
+        alert('Введите название записи');
+        return;
+    }
+
+    if (!currentRecordingBlob) {
+        alert('Ошибка: запись не найдена');
+        closeNameModal();
+        return;
+    }
+
+    // Создаем FormData для отправки
+    const formData = new FormData();
+    formData.append('audio', currentRecordingBlob, `${title}.webm`);
+    formData.append('title', title);
+
+    try {
+        const response = await fetch('{% url "player:upload_audio_recording" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert('Запись успешно сохранена');
+            loadRecordings(); // Обновляем список записей
+        } else {
+            alert(data.error || 'Ошибка при сохранении записи');
+        }
+    } catch (error) {
+        console.error('Ошибка при сохранении:', error);
+        alert('Ошибка при сохранении записи');
+    } finally {
+        closeNameModal();
+        currentRecordingBlob = null;
+    }
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        document.getElementById('startRecordBtn').style.display = 'inline-block';
+        document.getElementById('stopRecordBtn').style.display = 'none';
+    }
+}
+
+// ========== Остальные функции ==========
+
+function getDurationFromMedia(file, callback) {
+    const mediaElement = document.createElement(file.type === 'audio' ? 'audio' : 'video');
+    mediaElement.preload = 'metadata';
+    mediaElement.onloadedmetadata = function() {
+        const duration = Math.floor(mediaElement.duration);
+        callback(duration);
+        mediaElement.src = '';
+        URL.revokeObjectURL(mediaElement.src);
+    };
+    mediaElement.onerror = function() {
+        callback(0);
+        mediaElement.src = '';
+    };
+    mediaElement.src = URL.createObjectURL(file);
+}
+
+function showPlayer(url, type, title) {
+    const modal = document.createElement('div');
+    modal.className = 'player-modal';
+
+    const closeBtn = document.createElement('div');
+    closeBtn.className = 'player-close';
+    closeBtn.innerHTML = '×';
+    closeBtn.onclick = () => modal.remove();
+
+    const content = document.createElement('div');
+    content.className = 'player-modal-content';
+
+    if (type === 'audio') {
+        content.innerHTML = `
+            <audio controls preload="metadata">
+                <source src="${url}" type="audio/mpeg">
+            </audio>
+            <div style="padding: 12px; color: white; text-align: center;">${escapeHtml(title)}</div>
+        `;
+    } else {
+        content.innerHTML = `
+            <video controls preload="metadata">
+                <source src="${url}" type="video/mp4">
+            </video>
+            <div style="padding: 12px; color: white; text-align: center;">${escapeHtml(title)}</div>
+        `;
+    }
+
+    modal.appendChild(closeBtn);
+    modal.appendChild(content);
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+
+    document.body.appendChild(modal);
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds === 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Загрузка плейлистов
+async function loadPlaylists() {
+    try {
+        const response = await fetch('{% url "player:get_playlists" %}');
+        const data = await response.json();
+
+        const select = document.getElementById('playlistSelect');
+        const listDiv = document.getElementById('playlistsList');
+
+        if (select) {
+            select.innerHTML = '<option value="">Выберите плейлист</option>';
+        }
+        listDiv.innerHTML = '';
+
+        data.playlists.forEach(playlist => {
+            if (select) {
+                const option = document.createElement('option');
+                option.value = playlist.id;
+                option.textContent = playlist.name;
+                select.appendChild(option);
+            }
+
+            const item = document.createElement('div');
+            item.className = 'playlist-item' + (playlist.is_active ? ' active' : '');
+            item.innerHTML = `
+                <span class="playlist-name" onclick="loadPlaylistItems(${playlist.id})">${escapeHtml(playlist.name)}</span>
+                <span class="playlist-badge">${playlist.items_count}</span>
+                <div class="playlist-actions">
+                    <button class="playlist-action-btn" onclick="event.stopPropagation(); renamePlaylist(${playlist.id}, '${escapeHtml(playlist.name)}')" title="Переименовать">✏️</button>
+                    <button class="playlist-action-btn" onclick="event.stopPropagation(); deletePlaylist(${playlist.id})" title="Удалить">🗑️</button>
+                </div>
+            `;
+            listDiv.appendChild(item);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки плейлистов:', error);
+    }
+}
+
+async function renamePlaylist(playlistId, currentName) {
+    const newName = prompt('Введите новое название плейлиста:', currentName);
+    if (!newName || newName === currentName) return;
+
+    try {
+        const response = await fetch(`{% url "player:rename_playlist" 0 %}`.replace('0', playlistId), {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ name: newName })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            if (currentPlaylistId === playlistId) {
+                document.getElementById('currentPlaylistName').textContent = `Плейлист: ${newName}`;
+            }
+            loadPlaylists();
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        console.error('Ошибка переименования:', error);
+        alert('Ошибка при переименовании');
+    }
+}
+
+async function deletePlaylist(playlistId) {
+    if (!confirm('Вы уверены, что хотите удалить этот плейлист?')) return;
+
+    try {
+        const response = await fetch(`{% url "player:delete_playlist" 0 %}`.replace('0', playlistId), {
+            method: 'DELETE',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            if (currentPlaylistId === playlistId) {
+                currentPlaylistId = null;
+                document.getElementById('currentPlaylistName').textContent = '';
+                document.getElementById('currentPlaylistItems').innerHTML = '';
+            }
+            loadPlaylists();
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка при удалении');
+    }
+}
+
+async function loadPlaylistItems(playlistId) {
+    currentPlaylistId = playlistId;
+    try {
+        const response = await fetch(`{% url "player:get_playlist_items" 0 %}`.replace('0', playlistId));
+        const data = await response.json();
+
+        document.getElementById('currentPlaylistName').textContent = `Плейлист: ${data.playlist.name}`;
+
+        const container = document.getElementById('currentPlaylistItems');
+        container.innerHTML = '';
+
+        data.items.forEach((item) => {
+            const typeText = item.media_file.media_type === 'audio' ? 'аудио' : 'видео';
+            const div = document.createElement('div');
+            div.className = 'playlist-item-file';
+            div.innerHTML = `
+                <div class="playlist-item-info" onclick="showPlayer('${item.media_file.file_url}', '${item.media_file.media_type}', '${escapeHtml(item.media_file.title)}')">
+                    <div class="playlist-item-title">${escapeHtml(item.media_file.title)}</div>
+                    <div class="playlist-item-duration">${typeText} • ${formatDuration(item.media_file.duration)}</div>
+                </div>
+                <button class="playlist-item-remove" onclick="removeFromPlaylist(${item.id})">×</button>
+            `;
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки элементов плейлиста:', error);
+    }
+}
+
+async function loadMediaFiles() {
+    try {
+        const response = await fetch('{% url "player:get_media_files" %}');
+        const data = await response.json();
+
+        const container = document.getElementById('mediaGrid');
+        container.innerHTML = '';
+
+        data.files.forEach(file => {
+            const typeText = file.media_type === 'audio' ? 'аудио' : 'видео';
+            const div = document.createElement('div');
+            div.className = 'media-item';
+            div.innerHTML = `
+                <div class="media-title">${escapeHtml(file.title)}</div>
+                <div class="media-type">${typeText}</div>
+                <div class="media-duration">${formatDuration(file.duration)}</div>
+                <button onclick="event.stopPropagation(); addToCurrentPlaylist(${file.id})" style="margin-top:8px; padding:4px 8px; background:#df3b3b; color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px;">+ Добавить</button>
+            `;
+            div.onclick = () => showPlayer(file.file_url, file.media_type, file.title);
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки медиафайлов:', error);
+    }
+}
+
+async function loadRecordings() {
+    try {
+        const response = await fetch('{% url "player:get_audio_recordings" %}');
+        const data = await response.json();
+
+        const container = document.getElementById('recordingsList');
+        container.innerHTML = '';
+
+        data.recordings.forEach(rec => {
+            const div = document.createElement('div');
+            div.className = 'media-item';
+            div.innerHTML = `
+                <div class="media-title">${escapeHtml(rec.title)}</div>
+                <div class="media-type">запись</div>
+                <div class="media-duration">${formatDuration(rec.duration)}</div>
+                <button onclick="event.stopPropagation(); addRecordingToPlaylist(${rec.id})" style="margin-top:8px; padding:4px 8px; background:#df3b3b; color:white; border:none; border-radius:4px; cursor:pointer; font-size:11px;">+ Добавить</button>
+            `;
+            div.onclick = () => showPlayer(rec.file_url, 'audio', rec.title);
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки записей:', error);
+    }
+}
+
+async function loadMessages() {
+    try {
+        const url = showArchived ? '{% url "player:get_messages" %}?archived=true' : '{% url "player:get_messages" %}';
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const container = document.getElementById('messagesList');
+        container.innerHTML = '';
+
+        data.messages.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'message-item';
+            div.innerHTML = `
+                <div class="message-header">
+                    <span class="message-user">${escapeHtml(msg.username)}</span>
+                    <span class="message-time">${msg.created_at}</span>
+                </div>
+                <div class="message-content">${escapeHtml(msg.content)}</div>
+                <div class="message-status">
+                    <button class="status-btn status-new ${msg.status === 'new' ? 'active' : ''}" onclick="updateMessageStatus(${msg.id}, 'new')">Новое</button>
+                    <button class="status-btn status-progress ${msg.status === 'in_progress' ? 'active' : ''}" onclick="updateMessageStatus(${msg.id}, 'in_progress')">В работе</button>
+                    <button class="status-btn status-completed ${msg.status === 'completed' ? 'active' : ''}" onclick="updateMessageStatus(${msg.id}, 'completed')">Завершено</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки сообщений:', error);
+    }
+}
+
+async function uploadMedia(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const mediaType = file.type.startsWith('audio/') ? 'audio' : 'video';
+    getDurationFromMedia(file, async (duration) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name.split('.')[0]);
+        formData.append('media_type', mediaType);
+        formData.append('duration', duration);
+
+        try {
+            const response = await fetch('{% url "player:upload_media" %}', {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                loadMediaFiles();
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            alert('Ошибка при загрузке файла');
+        }
+        input.value = '';
+    });
+}
+
+async function addToCurrentPlaylist(mediaId) {
+    if (!currentPlaylistId) {
+        alert('Сначала выберите плейлист');
+        return;
+    }
+
+    try {
+        const response = await fetch(`{% url "player:add_to_playlist" 0 %}`.replace('0', currentPlaylistId), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ media_ids: [mediaId] })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            loadPlaylistItems(currentPlaylistId);
+            loadPlaylists();
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        console.error('Ошибка добавления:', error);
+        alert('Ошибка при добавлении в плейлист');
+    }
+}
+
+async function removeFromPlaylist(itemId) {
+    try {
+        await fetch(`{% url "player:remove_from_playlist" 0 0 %}`.replace('0', currentPlaylistId).replace('0', itemId), {
+            method: 'DELETE',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'}
+        });
+
+        loadPlaylistItems(currentPlaylistId);
+        loadPlaylists();
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        alert('Ошибка при удалении из плейлиста');
+    }
+}
+
+async function createPlaylist() {
+    const name = prompt('Введите название плейлиста:');
+    if (!name) return;
+
+    try {
+        await fetch('{% url "player:create_playlist" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ name: name })
+        });
+
+        loadPlaylists();
+    } catch (error) {
+        console.error('Ошибка создания:', error);
+        alert('Ошибка при создании плейлиста');
+    }
+}
+
+async function toggleShuffle() {
+    if (!currentPlaylistId) return;
+    const btn = document.getElementById('shuffleBtn');
+    const newState = !btn.classList.contains('active');
+
+    try {
+        await fetch(`{% url "player:toggle_playlist_setting" 0 %}`.replace('0', currentPlaylistId), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ setting: 'shuffle', value: newState })
+        });
+
+        btn.classList.toggle('active');
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
+
+async function toggleLoop() {
+    if (!currentPlaylistId) return;
+    const btn = document.getElementById('loopBtn');
+    const newState = !btn.classList.contains('active');
+
+    try {
+        await fetch(`{% url "player:toggle_playlist_setting" 0 %}`.replace('0', currentPlaylistId), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ setting: 'loop', value: newState })
+        });
+
+        btn.classList.toggle('active');
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
+
+async function updateMessageStatus(messageId, status) {
+    try {
+        await fetch(`{% url "player:update_message_status" 0 %}`.replace('0', messageId), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ status: status })
+        });
+
+        loadMessages();
+    } catch (error) {
+        console.error('Ошибка обновления статуса:', error);
+    }
+}
+
+function toggleArchived() {
+    showArchived = !showArchived;
+    const btn = document.getElementById('archivedToggle');
+    btn.textContent = showArchived ? 'Показать активные' : 'Показать архив';
+    loadMessages();
+}
+
+async function addRecordingToPlaylist(recordingId) {
+    if (!currentPlaylistId) {
+        alert('Сначала выберите плейлист');
+        return;
+    }
+
+    try {
+        const response = await fetch(`{% url "player:add_to_playlist" 0 %}`.replace('0', currentPlaylistId), {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: JSON.stringify({ media_ids: [recordingId] })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            loadPlaylistItems(currentPlaylistId);
+            loadPlaylists();
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        console.error('Ошибка добавления:', error);
+        alert('Ошибка при добавлении в плейлист');
+    }
+}
+
+// Управление эфиром
+async function toggleBroadcast() {
+    const btn = document.getElementById('broadcastBtn');
+    const controls = document.getElementById('broadcastControls');
+    const statusBadge = document.getElementById('broadcastStatusBadge');
+
+    if (!isBroadcastActive) {
+        try {
+            const response = await fetch('{% url "player:start_broadcast" %}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'},
+                body: JSON.stringify({ playlist_id: null, volume: 50 })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                isBroadcastActive = true;
+                btn.textContent = 'Остановить эфир';
+                btn.classList.add('stop');
+                controls.style.display = 'block';
+                statusBadge.textContent = 'Эфир активен';
+                statusBadge.classList.add('active');
+                loadBroadcastPlaylists();
+                document.getElementById('broadcastVolume').value = 50;
+                document.getElementById('playlistVolume').value = 25;
+            } else {
+                alert(data.error);
+            }
+        } catch (error) {
+            console.error('Ошибка запуска эфира:', error);
+            alert('Ошибка при запуске эфира');
+        }
+    } else {
+        try {
+            await fetch('{% url "player:stop_broadcast" %}', { method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'} });
+
+            isBroadcastActive = false;
+            btn.textContent = 'Начать эфир';
+            btn.classList.remove('stop');
+            controls.style.display = 'none';
+            statusBadge.textContent = 'Эфир неактивен';
+            statusBadge.classList.remove('active');
+
+            if (isWebcamOn) toggleCam();
+            if (isMicOn) toggleMic();
+        } catch (error) {
+            console.error('Ошибка остановки эфира:', error);
+        }
+    }
+}
+
+function toggleMic() {
+    if (!isBroadcastActive) {
+        alert('Сначала начните эфир');
+        return;
+    }
+
+    const toggle = document.getElementById('micToggle');
+    isMicOn = !isMicOn;
+
+    if (isMicOn) {
+        toggle.classList.add('active');
+        console.log('Микрофон включен - ожидает интеграции с плеером');
+        showPlaceholderMessage('Микрофон включен (ожидает интеграции с плеером)');
+    } else {
+        toggle.classList.remove('active');
+        console.log('Микрофон выключен');
+    }
+}
+
+async function toggleCam() {
+    if (!isBroadcastActive) {
+        alert('Сначала начните эфир');
+        return;
+    }
+
+    const toggle = document.getElementById('camToggle');
+    const previewContainer = document.getElementById('webcamPreviewContainer');
+
+    if (!isWebcamOn) {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            const video = document.getElementById('localVideo');
+            video.srcObject = localStream;
+            previewContainer.style.display = 'block';
+            toggle.classList.add('active');
+            isWebcamOn = true;
+            console.log('Камера включена - ожидает интеграции с плеером');
+            showPlaceholderMessage('Камера включена (ожидает интеграции с плеером)');
+        } catch (err) {
+            console.error('Ошибка доступа к камере:', err);
+            alert('Не удалось получить доступ к камере');
+        }
+    } else {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            document.getElementById('localVideo').srcObject = null;
+        }
+        previewContainer.style.display = 'none';
+        toggle.classList.remove('active');
+        isWebcamOn = false;
+        console.log('Камера выключена');
+    }
+}
+
+function toggleFullscreen() {
+    const video = document.getElementById('localVideo');
+    if (video.requestFullscreen) {
+        video.requestFullscreen();
+    } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+    } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+    }
+}
+
+async function loadBroadcastPlaylists() {
+    try {
+        const response = await fetch('{% url "player:get_playlists" %}');
+        const data = await response.json();
+
+        const select = document.getElementById('broadcastPlaylistSelect');
+        select.innerHTML = '<option value="">Без фоновой музыки</option>';
+
+        data.playlists.forEach(playlist => {
+            const option = document.createElement('option');
+            option.value = playlist.id;
+            option.textContent = playlist.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки плейлистов для эфира:', error);
+    }
+}
+
+async function changeBroadcastPlaylist() {
+    const playlistId = document.getElementById('broadcastPlaylistSelect').value;
+    const playlistVolumeGroup = document.getElementById('playlistVolumeGroup');
+
+    if (playlistId) {
+        playlistVolumeGroup.style.display = 'block';
+
+        try {
+            const response = await fetch(`{% url "player:get_playlist_items" 0 %}`.replace('0', playlistId));
+            const data = await response.json();
+            const hasVideo = data.items.some(item => item.media_file.media_type === 'video');
+
+            console.log(`Плейлист ${playlistId} выбран для фонового воспроизведения`);
+            console.log(`Содержит видео: ${hasVideo}`);
+
+            if (hasVideo) {
+                showPlaceholderMessage('В плейлисте есть видео-файлы. При их воспроизведении камера автоматически выключится (ожидает интеграции с плеером)');
+                setupVideoPlaybackTracking(data.items);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки плейлиста:', error);
+        }
+    } else {
+        playlistVolumeGroup.style.display = 'none';
+        console.log('Фоновая музыка отключена');
+    }
+}
+
+function setupVideoPlaybackTracking(items) {
+    console.log('Настройка отслеживания видео в плейлисте');
+    console.log('Видео-файлы в плейлисте:', items.filter(i => i.media_file.media_type === 'video'));
+}
+
+function showPlaceholderMessage(message) {
+    let statusDiv = document.getElementById('broadcastStatusMessage');
+    if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.id = 'broadcastStatusMessage';
+        statusDiv.className = 'status-text';
+        statusDiv.style.marginTop = '12px';
+        statusDiv.style.padding = '8px';
+        statusDiv.style.background = '#fef2f2';
+        statusDiv.style.borderRadius = '6px';
+        statusDiv.style.color = '#df3b3b';
+        document.querySelector('#broadcastControls .broadcast-controls-group:last-child').after(statusDiv);
+    }
+    statusDiv.textContent = message;
+    setTimeout(() => {
+        if (statusDiv.textContent === message) {
+            statusDiv.textContent = '';
+        }
+    }, 3000);
+}
+
+// Громкость эфира
+document.getElementById('broadcastVolume')?.addEventListener('input', async (e) => {
+    const volume = e.target.value;
+    console.log(`Громкость эфира: ${volume}%`);
+});
+
+// Громкость плейлиста
+document.getElementById('playlistVolume')?.addEventListener('input', (e) => {
+    const volume = e.target.value;
+    console.log(`Громкость фона: ${volume}%`);
+});
+
+// Вкладки
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+
+        if (btn.dataset.tab === 'media') loadMediaFiles();
+        if (btn.dataset.tab === 'recordings') loadRecordings();
+        if (btn.dataset.tab === 'messages') loadMessages();
+    });
+});
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Инициализация
+loadPlaylists();
+loadMediaFiles();
+loadMessages();
+</script>
+{% endblock %}
