@@ -1,0 +1,206 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Авторизация | Система управления потоковым вещанием{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'logo.ico' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .auth-card:hover {
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            margin-bottom: 15px;
+        }
+
+        .logo-icon svg {
+            width: 120px;
+            height: auto;
+            color: #df3b3b;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e293b;
+            letter-spacing: 2px;
+        }
+
+        .logo-subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-weight: 500;
+            font-size: 14px;
+            margin-left: 4px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #df3b3b;
+            box-shadow: 0 0 0 3px rgba(223, 59, 59, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: #df3b3b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background: #c92a2a;
+            box-shadow: 0 5px 15px rgba(223, 59, 59, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .auth-links a {
+            color: #df3b3b;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .auth-links a:hover {
+            color: #c92a2a;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 30px 20px;
+            }
+
+            .logo-text {
+                font-size: 24px;
+            }
+
+            .logo-icon svg {
+                width: 100px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-card {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Стили для сообщений */
+        .error-message {
+            color: #df3b3b;
+            font-size: 12px;
+            margin-top: 5px;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 104 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M89 0H104L91 14L104 29H89L76 14L89 0Z" fill="currentColor"></path>
+                        <rect x="66" width="13" height="29" fill="currentColor"></rect>
+                        <rect x="42" width="13" height="29" fill="currentColor"></rect>
+                        <rect x="33" width="31" height="12" fill="currentColor"></rect>
+                        <rect x="9" width="13" height="29" fill="currentColor"></rect>
+                        <rect width="31" height="12" fill="currentColor"></rect>
+                    </svg>
+                </div>
+                <div class="logo-subtitle">Система управления потоковым вещанием</div>
+            </div>
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>
