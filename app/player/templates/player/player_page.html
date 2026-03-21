@@ -243,7 +243,6 @@
     }
 
     .my-stream-btn:hover {
-        transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(223, 59, 59, 0.3);
     }
 
@@ -378,8 +377,8 @@
     }
 
     .control-btn {
-        width: 48px;
-        height: 48px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         border: none;
         background: #df3b3b;
@@ -670,10 +669,8 @@
             <!-- Кнопка "Мой поток" -->
             <div class="sidebar-section">
                 <button class="my-stream-btn" id="myStreamBtn">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" y1="19" x2="12" y2="22"/>
+                    <svg width="20" height="20" viewBox="0 0 22 22" fill="currentColor" style="margin-bottom: 5px;">
+                        <path d="M8 5v14l11-7z"/>
                     </svg>
                     Мой поток
                 </button>
@@ -864,7 +861,7 @@
                     <textarea
                         id="messageText"
                         class="message-input"
-                        rows="3"
+                        rows="1"
                         placeholder="Напишите сообщение ведущему..."
                         maxlength="500"
                     ></textarea>
@@ -1379,10 +1376,5 @@
         videoPlayer.addEventListener('timeupdate', updateTime);
         videoPlayer.addEventListener('loadedmetadata', updateTime);
     }
-
-    // Приветственное сообщение
-    setTimeout(() => {
-        showNotification('Добро пожаловать! Выберите жанр, ведущего или включите "Мой поток"', 'info', 'Добро пожаловать');
-    }, 500);
 </script>
 {% endblock %}
