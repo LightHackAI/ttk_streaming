@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth import update_session_auth_hash
+from django.utils import timezone
 import json
 from accounts.models import User
 
@@ -109,7 +110,7 @@ def delete_user(request, user_id):
             return JsonResponse({'error': 'Нельзя удалить самого себя'}, status=400)
 
         user.is_deleted = True
-        user.deleted_at = timezone.now()
+        user.deleted_at = timezone.now()  # Исправлено: добавлен импорт timezone
         user.save()
 
         return JsonResponse({

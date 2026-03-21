@@ -259,26 +259,6 @@
         align-items: center;
     }
 
-    .modal-header h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-        color: white;
-    }
-
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #94a3b8;
-        transition: color 0.2s;
-    }
-
-    .modal-close:hover {
-        color: #df3b3b;
-    }
-
     .modal-body {
         padding: 24px;
     }
@@ -348,6 +328,14 @@
         background: #c92a2a;
     }
 
+    .btn-danger {
+        background: #dc2626;
+    }
+
+    .btn-danger:hover {
+        background: #b91c1c;
+    }
+
     .loading {
         text-align: center;
         padding: 40px;
@@ -358,6 +346,38 @@
         color: #df3b3b;
         font-size: 12px;
         margin-top: 5px;
+    }
+
+    /* Стили для модального окна подтверждения */
+    .confirm-icon {
+        text-align: center;
+        font-size: 48px;
+        margin-bottom: 16px;
+    }
+
+    .confirm-title {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 12px;
+    }
+
+    .confirm-message {
+        text-align: center;
+        color: #475569;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+
+    .confirm-warning {
+        background: #fef2f2;
+        border-left: 3px solid #df3b3b;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #991b1b;
+        margin-top: 16px;
     }
 
     @media (max-width: 768px) {
@@ -527,9 +547,35 @@
     </div>
 </div>
 
+<!-- Модальное окно подтверждения удаления -->
+<div id="delete-confirm-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Подтверждение удаления</h3>
+            <button class="modal-close" onclick="closeModal('delete-confirm-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="confirm-title">
+                Удаление пользователя
+            </div>
+            <div class="confirm-message" id="delete-message">
+                Вы уверены, что хотите удалить этого пользователя?
+            </div>
+            <div class="confirm-warning">
+                Внимание: Данные пользователя останутся в истории, но доступ к системе будет закрыт.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('delete-confirm-modal')">Отмена</button>
+            <button class="btn-save btn-danger" id="confirm-delete-btn">Удалить</button>
+        </div>
+    </div>
+</div>
+
 <script>
     let currentUserId = null;
     let csrfToken = null;
+    let userIdToDelete = null;
 
     // Получаем CSRF токен
     function getCSRFToken() {
@@ -604,7 +650,7 @@
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn edit" onclick="editUser(${user.id})">Редактировать</button>
-                            <button class="action-btn delete" onclick="deleteUser(${user.id})">Удалить</button>
+                            <button class="action-btn delete" onclick="showDeleteConfirm(${user.id}, '${escapeHtml(user.login)}')">Удалить</button>
                             <button class="action-btn password" onclick="changePassword(${user.id})">Сменить пароль</button>
                             <button class="action-btn role" onclick="assignRole(${user.id})">Назначить роль</button>
                         </div>
@@ -619,6 +665,40 @@
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    // Показать модальное окно подтверждения удаления
+    function showDeleteConfirm(userId, username) {
+        userIdToDelete = userId;
+        document.getElementById('delete-message').innerHTML = `Вы уверены, что хотите удалить пользователя <strong>${escapeHtml(username)}</strong>?`;
+        openModal('delete-confirm-modal');
+    }
+
+    // Выполнить удаление
+    async function confirmDelete() {
+        if (!userIdToDelete) return;
+
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/${userIdToDelete}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                closeModal('delete-confirm-modal');
+                userIdToDelete = null;
+                loadUsers();
+            } else {
+                alert(data.error || 'Ошибка при удалении');
+            }
+        } catch (error) {
+            console.error('Ошибка удаления:', error);
+            alert('Ошибка при удалении пользователя');
+        }
     }
 
     // Редактирование пользователя
@@ -673,7 +753,6 @@
             const data = await response.json();
 
             if (response.ok) {
-                alert('✅ Пользователь успешно обновлен');
                 closeModal('edit-modal');
                 loadUsers();
             } else {
@@ -681,31 +760,6 @@
             }
         } catch (error) {
             alert('Ошибка при сохранении');
-        }
-    }
-
-    // Удаление пользователя
-    async function deleteUser(userId) {
-        if (confirm('🗑️ Вы уверены, что хотите удалить этого пользователя?\nДанные останутся в истории.')) {
-            try {
-                const response = await fetch(`/myttk_streaming/api/users/${userId}/delete/`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': getCSRFToken()
-                    }
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    alert('✅ Пользователь успешно удален');
-                    loadUsers();
-                } else {
-                    alert(data.error || 'Ошибка при удалении');
-                }
-            } catch (error) {
-                alert('Ошибка при удалении');
-            }
         }
     }
 
@@ -762,13 +816,19 @@
             const data = await response.json();
 
             if (response.ok) {
-                alert('✅ Пароль успешно изменен');
                 closeModal('password-modal');
             } else {
-                alert(data.error || 'Ошибка при смене пароля');
+                // Показываем ошибку прямо в модальном окне
+                if (data.error && data.error.includes('старый пароль')) {
+                    showError('old-password-error', data.error);
+                } else if (data.error) {
+                    showError('old-password-error', data.error);
+                } else {
+                    showError('old-password-error', 'Неверный старый пароль');
+                }
             }
         } catch (error) {
-            alert('Ошибка при смене пароля');
+            showError('old-password-error', 'Ошибка при смене пароля');
         }
     }
 
@@ -805,7 +865,6 @@
             const data = await response.json();
 
             if (response.ok) {
-                alert('✅ Роль успешно назначена');
                 closeModal('role-modal');
                 loadUsers();
             } else {
@@ -856,6 +915,9 @@
         document.getElementById('filter-date').value = '';
         loadUsers();
     });
+
+    // Кнопка подтверждения удаления
+    document.getElementById('confirm-delete-btn').addEventListener('click', confirmDelete);
 
     // Загрузка данных при загрузке страницы
     loadUsers();
