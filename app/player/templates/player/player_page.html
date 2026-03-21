@@ -5,13 +5,1384 @@
 
 {% block extra_css %}
 <style>
+    /* Основные стили плеера */
+    .player-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
 
+    /* Заголовок раздела */
+    .section-header {
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+
+    .section-description {
+        color: #64748b;
+        font-size: 14px;
+    }
+
+    /* Две колонки */
+    .two-columns {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 24px;
+    }
+
+    /* Левая панель */
+    .sidebar {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+
+    .sidebar-section {
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .sidebar-section:last-child {
+        border-bottom: none;
+    }
+
+    .sidebar-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .sidebar-title svg {
+        width: 20px;
+        height: 20px;
+        color: #df3b3b;
+    }
+
+    /* Выбор жанра */
+    .genre-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .genre-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .genre-item:hover {
+        background: #fef2f2;
+        border-color: #df3b3b;
+    }
+
+    .genre-item.active {
+        background: #df3b3b;
+        border-color: #df3b3b;
+        color: white;
+    }
+
+    .genre-item.active .genre-name {
+        color: white;
+    }
+
+    .genre-icon {
+        font-size: 20px;
+    }
+
+    .genre-name {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .genre-count {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .genre-item.active .genre-count {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* Список ведущих */
+    .host-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .host-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+        background: #f8fafc;
+    }
+
+    .host-card:hover {
+        background: #fef2f2;
+        transform: translateX(4px);
+    }
+
+    .host-card.active {
+        background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);
+        border-color: #df3b3b;
+        box-shadow: 0 2px 8px rgba(223, 59, 59, 0.1);
+    }
+
+    .host-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #df3b3b, #c92a2a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    .host-info {
+        flex: 1;
+    }
+
+    .host-name {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 4px;
+    }
+
+    .host-status {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+    }
+
+    .status-badge {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+    .status-badge.live {
+        background: #10b981;
+        animation: pulse 1.5s infinite;
+    }
+
+    .status-badge.offline {
+        background: #94a3b8;
+    }
+
+    .status-text {
+        color: #64748b;
+    }
+
+    .host-type {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .host-type.video {
+        background: #fee2e2;
+        color: #df3b3b;
+    }
+
+    .host-type.audio {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    /* Кнопка "Мой поток" */
+    .my-stream-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #df3b3b, #c92a2a);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .my-stream-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(223, 59, 59, 0.3);
+    }
+
+    .my-stream-btn.active {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    /* Правая панель - плеер */
+    .player-area {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    /* Медиа контейнер */
+    .media-container {
+        background: #000;
+        position: relative;
+        aspect-ratio: 16 / 9;
+    }
+
+    #audioPlayer {
+        width: 100%;
+        height: 100%;
+        display: none;
+    }
+
+    #videoPlayer {
+        width: 100%;
+        height: 100%;
+        display: none;
+        object-fit: contain;
+        background: #000;
+    }
+
+    .media-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: white;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .media-placeholder svg {
+        width: 80px;
+        height: 80px;
+        opacity: 0.5;
+    }
+
+    .media-placeholder p {
+        font-size: 16px;
+        color: #94a3b8;
+    }
+
+    /* Информация о текущем потоке */
+    .stream-info {
+        padding: 20px 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .current-stream-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .stream-badge {
+        font-size: 12px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: #fee2e2;
+        color: #df3b3b;
+        font-weight: 500;
+    }
+
+    .stream-badge.video {
+        background: #fee2e2;
+        color: #df3b3b;
+    }
+
+    .stream-badge.audio {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    .stream-badge.personal {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .current-stream-desc {
+        font-size: 14px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .stream-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .listener-count {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+    }
+
+    /* Элементы управления плеером */
+    .player-controls {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding: 20px 24px;
+        background: white;
+    }
+
+    .control-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        background: #df3b3b;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .control-btn:hover {
+        background: #c92a2a;
+        transform: scale(1.05);
+    }
+
+    .volume-control {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        max-width: 200px;
+    }
+
+    .volume-control svg {
+        width: 20px;
+        height: 20px;
+        color: #64748b;
+    }
+
+    .volume-slider {
+        flex: 1;
+        height: 4px;
+        -webkit-appearance: none;
+        background: #e2e8f0;
+        border-radius: 2px;
+        outline: none;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #df3b3b;
+        cursor: pointer;
+    }
+
+    .time-info {
+        margin-left: auto;
+        font-size: 13px;
+        color: #64748b;
+        font-family: monospace;
+    }
+
+    /* Форма обратной связи */
+    .feedback-card {
+        margin-top: 24px;
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-title svg {
+        width: 24px;
+        height: 24px;
+        color: #df3b3b;
+    }
+
+    .message-input-group {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .message-input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.3s;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .message-input:focus {
+        border-color: #df3b3b;
+        box-shadow: 0 0 0 3px rgba(223, 59, 59, 0.1);
+    }
+
+    .send-btn {
+        padding: 12px 24px;
+        background: #df3b3b;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .send-btn:hover {
+        background: #c92a2a;
+        transform: translateY(-2px);
+    }
+
+    .voice-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+    }
+
+    .voice-btn {
+        padding: 10px 20px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    .voice-btn:hover {
+        background: #e2e8f0;
+        border-color: #df3b3b;
+    }
+
+    .voice-btn.recording {
+        background: #fee2e2;
+        border-color: #df3b3b;
+        color: #df3b3b;
+        animation: pulse-red 1.5s infinite;
+    }
+
+    .recording-timer {
+        font-size: 14px;
+        font-family: monospace;
+        color: #df3b3b;
+        font-weight: 600;
+    }
+
+    /* Уведомления */
+    .toast-notification {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1100;
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    .toast {
+        background: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 300px;
+        border-left: 4px solid;
+        animation: fadeOut 0.3s ease-out 2.7s forwards;
+    }
+
+    .toast.success {
+        border-left-color: #10b981;
+    }
+
+    .toast.error {
+        border-left-color: #df3b3b;
+    }
+
+    .toast.info {
+        border-left-color: #3b82f6;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeOut {
+        to {
+            opacity: 0;
+            transform: translateX(100%);
+            visibility: hidden;
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        }
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+        }
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        }
+    }
+
+    @keyframes pulse-red {
+        0% {
+            box-shadow: 0 0 0 0 rgba(223, 59, 59, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 6px rgba(223, 59, 59, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(223, 59, 59, 0);
+        }
+    }
+
+    @media (max-width: 968px) {
+        .two-columns {
+            grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+            position: static;
+        }
+
+        .player-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .volume-control {
+            max-width: none;
+        }
+
+        .time-info {
+            margin-left: 0;
+            text-align: center;
+        }
+
+        .message-input-group {
+            flex-direction: column;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="section-header">
-    <h1 class="section-title">Плеер</h1>
-    <p class="section-description">Прослушивание, просмотр и управление аудио и видео</p>
+<div class="player-container">
+    <div class="section-header">
+        <h1 class="section-title">Потоковое вещание</h1>
+        <p class="section-description">Слушайте любимую музыку, смотрите трансляции и общайтесь с ведущими</p>
+    </div>
+
+    <div class="two-columns">
+        <!-- Левая панель - выбор контента -->
+        <div class="sidebar">
+            <!-- Кнопка "Мой поток" -->
+            <div class="sidebar-section">
+                <button class="my-stream-btn" id="myStreamBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                    Мой поток
+                </button>
+                <div style="font-size: 12px; color: #64748b; text-align: center;">
+                    Персональная подборка треков по вашему вкусу
+                </div>
+            </div>
+
+            <!-- Выбор жанра -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18V5l12-2v13"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <circle cx="18" cy="16" r="3"/>
+                    </svg>
+                    Музыкальные жанры
+                </div>
+                <div class="genre-list" id="genreList">
+                    <div class="genre-item" data-genre="all">
+                        <span class="genre-icon">🎵</span>
+                        <span class="genre-name">Все жанры</span>
+                        <span class="genre-count">1250</span>
+                    </div>
+                    <div class="genre-item" data-genre="rock">
+                        <span class="genre-icon">🎸</span>
+                        <span class="genre-name">Рок</span>
+                        <span class="genre-count">342</span>
+                    </div>
+                    <div class="genre-item" data-genre="pop">
+                        <span class="genre-icon">🎤</span>
+                        <span class="genre-name">Поп</span>
+                        <span class="genre-count">456</span>
+                    </div>
+                    <div class="genre-item" data-genre="electronic">
+                        <span class="genre-icon">🎧</span>
+                        <span class="genre-name">Электронная</span>
+                        <span class="genre-count">278</span>
+                    </div>
+                    <div class="genre-item" data-genre="jazz">
+                        <span class="genre-icon">🎷</span>
+                        <span class="genre-name">Джаз</span>
+                        <span class="genre-count">156</span>
+                    </div>
+                    <div class="genre-item" data-genre="classical">
+                        <span class="genre-icon">🎻</span>
+                        <span class="genre-name">Классика</span>
+                        <span class="genre-count">98</span>
+                    </div>
+                    <div class="genre-item" data-genre="hiphop">
+                        <span class="genre-icon">🎙️</span>
+                        <span class="genre-name">Хип-Хоп</span>
+                        <span class="genre-count">212</span>
+                    </div>
+                    <div class="genre-item" data-genre="folk">
+                        <span class="genre-icon">🪕</span>
+                        <span class="genre-name">Фолк</span>
+                        <span class="genre-count">87</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Список ведущих -->
+            <div class="sidebar-section">
+                <div class="sidebar-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Ведущие в эфире
+                </div>
+                <div class="host-list" id="hostList">
+                    <div class="host-card" data-host-id="1" data-host-type="video">
+                        <div class="host-avatar">А</div>
+                        <div class="host-info">
+                            <div class="host-name">Алексей Музыкальный</div>
+                            <div class="host-status">
+                                <span class="status-badge live"></span>
+                                <span class="status-text">В эфире</span>
+                                <span class="host-type video">Видео</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="host-card" data-host-id="2" data-host-type="audio">
+                        <div class="host-avatar">М</div>
+                        <div class="host-info">
+                            <div class="host-name">Мария Ведущая</div>
+                            <div class="host-status">
+                                <span class="status-badge live"></span>
+                                <span class="status-text">В эфире</span>
+                                <span class="host-type audio">Аудио</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="host-card" data-host-id="3" data-host-type="video">
+                        <div class="host-avatar">Д</div>
+                        <div class="host-info">
+                            <div class="host-name">Дмитрий DJ</div>
+                            <div class="host-status">
+                                <span class="status-badge live"></span>
+                                <span class="status-text">В эфире</span>
+                                <span class="host-type video">Видео</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="host-card" data-host-id="4" data-host-type="audio">
+                        <div class="host-avatar">Е</div>
+                        <div class="host-info">
+                            <div class="host-name">Елена Классика</div>
+                            <div class="host-status">
+                                <span class="status-badge offline"></span>
+                                <span class="status-text">Не в эфире</span>
+                                <span class="host-type audio">Аудио</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="host-card" data-host-id="5" data-host-type="video">
+                        <div class="host-avatar">Р</div>
+                        <div class="host-info">
+                            <div class="host-name">Роман Рокер</div>
+                            <div class="host-status">
+                                <span class="status-badge live"></span>
+                                <span class="status-text">В эфире</span>
+                                <span class="host-type video">Видео</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая панель - плеер -->
+        <div>
+            <!-- Плеер -->
+            <div class="player-area">
+                <div class="media-container">
+                    <audio id="audioPlayer" controls style="display: none;"></audio>
+                    <video id="videoPlayer" controls style="display: none;"></video>
+                    <div id="mediaPlaceholder" class="media-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 12h3l3-9 3 18 3-9h3"/>
+                        </svg>
+                        <p>Выберите жанр, ведущего или нажмите "Мой поток"</p>
+                    </div>
+                </div>
+
+                <!-- Информация о текущем потоке -->
+                <div class="stream-info">
+                    <div class="current-stream-title" id="currentStreamTitle">
+                        <span>Не выбрано</span>
+                    </div>
+                    <div class="current-stream-desc" id="currentStreamDesc">
+                        <span>Выберите источник для воспроизведения</span>
+                    </div>
+                </div>
+
+                <!-- Элементы управления плеером -->
+                <div class="player-controls">
+                    <button class="control-btn" id="playPauseBtn" disabled>
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </button>
+
+                    <div class="volume-control">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9v6h4l5 5V4L7 9H3z"/>
+                        </svg>
+                        <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="80" disabled>
+                    </div>
+
+                    <div class="time-info">
+                        <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Форма обратной связи -->
+            <div class="feedback-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                    </svg>
+                    Сообщение ведущему
+                </div>
+
+                <div class="message-input-group">
+                    <textarea
+                        id="messageText"
+                        class="message-input"
+                        rows="3"
+                        placeholder="Напишите сообщение ведущему..."
+                        maxlength="500"
+                    ></textarea>
+                    <button class="send-btn" id="sendMessageBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Отправить
+                    </button>
+                </div>
+
+                <div class="voice-controls">
+                    <button class="voice-btn" id="recordVoiceBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                        <span id="recordBtnText">Записать голосовое</span>
+                    </button>
+                    <div id="recordingTimer" class="recording-timer" style="display: none;">00:00</div>
+                    <button class="voice-btn" id="cancelRecordingBtn" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Отмена
+                    </button>
+                    <button class="voice-btn" id="sendVoiceBtn" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        Отправить
+                    </button>
+                </div>
+                <div id="voiceStatus" style="font-size: 12px; color: #64748b; margin-top: 12px;"></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Контейнер для уведомлений -->
+<div id="toast-container" class="toast-notification"></div>
+
+<script>
+    // DOM элементы
+    const audioPlayer = document.getElementById('audioPlayer');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const mediaPlaceholder = document.getElementById('mediaPlaceholder');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const currentTimeSpan = document.getElementById('currentTime');
+    const durationSpan = document.getElementById('duration');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const messageText = document.getElementById('messageText');
+    const recordVoiceBtn = document.getElementById('recordVoiceBtn');
+    const cancelRecordingBtn = document.getElementById('cancelRecordingBtn');
+    const sendVoiceBtn = document.getElementById('sendVoiceBtn');
+    const recordingTimer = document.getElementById('recordingTimer');
+    const recordBtnText = document.getElementById('recordBtnText');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const myStreamBtn = document.getElementById('myStreamBtn');
+    const currentStreamTitle = document.getElementById('currentStreamTitle');
+    const currentStreamDesc = document.getElementById('currentStreamDesc');
+
+    // Состояние
+    let isPlaying = false;
+    let currentStreamType = null; // 'myStream', 'host', 'genre'
+    let currentHostId = null;
+    let currentGenre = 'all';
+    let isMyStreamActive = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordingStartTime = null;
+    let recordingInterval = null;
+    let recordedBlob = null;
+
+    // Функция показа уведомлений
+    function showNotification(message, type = 'success', title = '') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const icons = {
+            success: '✅',
+            error: '❌',
+            info: 'ℹ️'
+        };
+
+        const titles = {
+            success: title || 'Успешно',
+            error: title || 'Ошибка',
+            info: title || 'Информация'
+        };
+
+        toast.innerHTML = `
+            <div class="toast-icon">${icons[type] || 'ℹ️'}</div>
+            <div class="toast-content">
+                <div class="toast-title">${titles[type]}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
+    // Форматирование времени
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Обновление времени
+    function updateTime() {
+        if (audioPlayer.src && audioPlayer.style.display !== 'none') {
+            currentTimeSpan.textContent = formatTime(audioPlayer.currentTime);
+            durationSpan.textContent = formatTime(audioPlayer.duration);
+        } else if (videoPlayer.src && videoPlayer.style.display !== 'none') {
+            currentTimeSpan.textContent = formatTime(videoPlayer.currentTime);
+            durationSpan.textContent = formatTime(videoPlayer.duration);
+        }
+    }
+
+    // Воспроизведение/Пауза
+    function togglePlayPause() {
+        if (audioPlayer.style.display !== 'none' && audioPlayer.src) {
+            if (isPlaying) {
+                audioPlayer.pause();
+            } else {
+                audioPlayer.play();
+            }
+        } else if (videoPlayer.style.display !== 'none' && videoPlayer.src) {
+            if (isPlaying) {
+                videoPlayer.pause();
+            } else {
+                videoPlayer.play();
+            }
+        }
+    }
+
+    // Изменение громкости
+    function setVolume(value) {
+        const volume = value / 100;
+        if (audioPlayer) audioPlayer.volume = volume;
+        if (videoPlayer) videoPlayer.volume = volume;
+    }
+
+    // Обновление иконки кнопки воспроизведения
+    function updatePlayPauseIcon() {
+        if (isPlaying) {
+            playPauseBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                </svg>
+            `;
+        } else {
+            playPauseBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            `;
+        }
+    }
+
+    // Включение "Моего потока"
+    function activateMyStream() {
+        isMyStreamActive = true;
+        currentStreamType = 'myStream';
+        currentHostId = null;
+
+        // Обновляем UI
+        myStreamBtn.classList.add('active');
+
+        // Снимаем активность с жанров и ведущих
+        document.querySelectorAll('.genre-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelectorAll('.host-card').forEach(host => {
+            host.classList.remove('active');
+        });
+
+        // Обновляем информацию о потоке
+        const selectedGenre = document.querySelector('.genre-item.active');
+        const genreName = selectedGenre ? selectedGenre.querySelector('.genre-name').textContent : 'все жанры';
+        currentStreamTitle.innerHTML = `
+            <span>🎵 Мой поток</span>
+            <span class="stream-badge personal">Персональная подборка</span>
+        `;
+        currentStreamDesc.innerHTML = `
+            <span>🎧 Треки подобраны специально для вас</span>
+            <span class="stream-meta">
+                <span class="listener-count">👥 Слушают: 156</span>
+            </span>
+        `;
+
+        // Здесь будет логика запуска персонального потока
+        showNotification(`Включен "Мой поток". Подборка треков по вашим предпочтениям`, 'success', '🎵 Мой поток');
+
+        // Активируем элементы управления
+        playPauseBtn.disabled = false;
+        volumeSlider.disabled = false;
+
+        // Показываем заглушку для демонстрации
+        mediaPlaceholder.style.display = 'flex';
+        audioPlayer.style.display = 'none';
+        videoPlayer.style.display = 'none';
+        mediaPlaceholder.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+            <p>🎵 Персональный плейлист готов к воспроизведению</p>
+            <p style="font-size: 12px;">Нажмите ▶ для начала прослушивания</p>
+        `;
+    }
+
+    // Выбор жанра
+    function selectGenre(genreElement) {
+        // Снимаем активность со всех жанров
+        document.querySelectorAll('.genre-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        genreElement.classList.add('active');
+
+        currentGenre = genreElement.dataset.genre;
+        currentStreamType = 'genre';
+        currentHostId = null;
+        isMyStreamActive = false;
+
+        // Снимаем активность с "Моего потока" и ведущих
+        myStreamBtn.classList.remove('active');
+        document.querySelectorAll('.host-card').forEach(host => {
+            host.classList.remove('active');
+        });
+
+        const genreName = genreElement.querySelector('.genre-name').textContent;
+        currentStreamTitle.innerHTML = `
+            <span>🎵 Жанр: ${genreName}</span>
+            <span class="stream-badge audio">Аудиопоток</span>
+        `;
+        currentStreamDesc.innerHTML = `
+            <span>🎧 Случайные треки в жанре "${genreName}"</span>
+            <span class="stream-meta">
+                <span class="listener-count">👥 Слушают: ${Math.floor(Math.random() * 500) + 100}</span>
+            </span>
+        `;
+
+        // Здесь будет логика запуска потока по жанру
+        showNotification(`Выбран жанр: ${genreName}. Включаем случайные треки`, 'info', '🎵 Жанр выбран');
+
+        // Активируем элементы управления
+        playPauseBtn.disabled = false;
+        volumeSlider.disabled = false;
+
+        // Показываем заглушку
+        mediaPlaceholder.style.display = 'flex';
+        audioPlayer.style.display = 'none';
+        videoPlayer.style.display = 'none';
+        mediaPlaceholder.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 12h3l3-9 3 18 3-9h3"/>
+            </svg>
+            <p>🎵 Подборка треков в жанре "${genreName}"</p>
+            <p style="font-size: 12px;">Нажмите ▶ для начала прослушивания</p>
+        `;
+    }
+
+    // Выбор ведущего
+    function selectHost(hostElement) {
+        const hostId = hostElement.dataset.hostId;
+        const hostType = hostElement.dataset.hostType;
+        const isLive = hostElement.querySelector('.status-badge').classList.contains('live');
+
+        if (!isLive) {
+            showNotification('Этот ведущий сейчас не в эфире', 'error');
+            return;
+        }
+
+        // Снимаем активность со всех ведущих
+        document.querySelectorAll('.host-card').forEach(host => {
+            host.classList.remove('active');
+        });
+        hostElement.classList.add('active');
+
+        currentHostId = hostId;
+        currentStreamType = 'host';
+        isMyStreamActive = false;
+
+        // Снимаем активность с "Моего потока" и жанров
+        myStreamBtn.classList.remove('active');
+        document.querySelectorAll('.genre-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        const hostName = hostElement.querySelector('.host-name').textContent;
+        const streamType = hostType === 'video' ? 'Видеотрансляция' : 'Аудиотрансляция';
+        const streamBadgeClass = hostType === 'video' ? 'video' : 'audio';
+
+        currentStreamTitle.innerHTML = `
+            <span>🎥 ${hostName}</span>
+            <span class="stream-badge ${streamBadgeClass}">${streamType}</span>
+        `;
+        currentStreamDesc.innerHTML = `
+            <span>🎬 ${streamType} ведущего ${hostName}</span>
+            <span class="stream-meta">
+                <span class="listener-count">👥 Зрителей: ${Math.floor(Math.random() * 1000) + 50}</span>
+            </span>
+        `;
+
+        // Здесь будет логика подключения к потоку ведущего
+        showNotification(`Подключаемся к трансляции ведущего ${hostName}`, 'info', '📡 Подключение');
+
+        // Активируем элементы управления
+        playPauseBtn.disabled = false;
+        volumeSlider.disabled = false;
+
+        // В зависимости от типа потока показываем соответствующий плеер
+        mediaPlaceholder.style.display = 'none';
+        if (hostType === 'video') {
+            audioPlayer.style.display = 'none';
+            videoPlayer.style.display = 'block';
+            videoPlayer.src = ''; // Здесь будет URL видеопотока
+            showNotification(`Видеотрансляция "${hostName}" готова к просмотру`, 'success');
+        } else {
+            audioPlayer.style.display = 'block';
+            videoPlayer.style.display = 'none';
+            audioPlayer.src = ''; // Здесь будет URL аудиопотока
+            showNotification(`Аудиотрансляция "${hostName}" готова к прослушиванию`, 'success');
+        }
+    }
+
+    // Отправка текстового сообщения
+    async function sendTextMessage() {
+        const message = messageText.value.trim();
+        if (!message) {
+            showNotification('Введите сообщение', 'error');
+            return;
+        }
+
+        let recipient = '';
+        if (currentStreamType === 'host' && currentHostId) {
+            recipient = 'ведущему';
+        } else if (currentStreamType === 'myStream') {
+            recipient = 'персональный поток';
+        } else if (currentStreamType === 'genre') {
+            recipient = 'общий чат';
+        }
+
+        showNotification(`Сообщение отправлено ${recipient}: "${message}"`, 'success');
+        messageText.value = '';
+    }
+
+    // Запись голосового сообщения
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                voiceStatus.textContent = `Голосовое сообщение записано (${(recordedBlob.size / 1024).toFixed(1)} KB)`;
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            recordingStartTime = Date.now();
+            recordingInterval = setInterval(updateRecordingTimer, 1000);
+
+            recordVoiceBtn.classList.add('recording');
+            recordBtnText.textContent = '⏹️ Остановить запись';
+            cancelRecordingBtn.style.display = 'inline-flex';
+            sendVoiceBtn.style.display = 'inline-flex';
+            recordingTimer.style.display = 'block';
+            voiceStatus.textContent = 'Идет запись... Говорите в микрофон';
+
+        } catch (error) {
+            showNotification('Не удалось получить доступ к микрофону', 'error');
+        }
+    }
+
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+            clearInterval(recordingInterval);
+            recordingTimer.style.display = 'none';
+        }
+    }
+
+    function cancelRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.onstop = () => {
+                audioChunks = [];
+                recordedBlob = null;
+            };
+            mediaRecorder.stop();
+            clearInterval(recordingInterval);
+        }
+        resetRecordingUI();
+        voiceStatus.textContent = 'Запись отменена';
+        setTimeout(() => voiceStatus.textContent = '', 2000);
+    }
+
+    function updateRecordingTimer() {
+        if (recordingStartTime) {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            recordingTimer.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            if (elapsed >= 300) {
+                stopRecording();
+                resetRecordingUI();
+                voiceStatus.textContent = 'Достигнут лимит записи (5 минут)';
+            }
+        }
+    }
+
+    function resetRecordingUI() {
+        recordVoiceBtn.classList.remove('recording');
+        recordBtnText.textContent = 'Записать голосовое';
+        cancelRecordingBtn.style.display = 'none';
+        sendVoiceBtn.style.display = 'none';
+        recordingTimer.style.display = 'none';
+        recordingTimer.textContent = '00:00';
+    }
+
+    function sendVoiceMessage() {
+        if (recordedBlob) {
+            showNotification(`Голосовое сообщение отправлено (${(recordedBlob.size / 1024).toFixed(1)} KB)`, 'success');
+            recordedBlob = null;
+            resetRecordingUI();
+            voiceStatus.textContent = '';
+        } else {
+            showNotification('Нет записанного сообщения', 'error');
+        }
+    }
+
+    // Обработчики событий
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    volumeSlider.addEventListener('input', (e) => setVolume(e.target.value));
+    sendMessageBtn.addEventListener('click', sendTextMessage);
+    myStreamBtn.addEventListener('click', activateMyStream);
+
+    messageText.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendTextMessage();
+        }
+    });
+
+    recordVoiceBtn.addEventListener('click', () => {
+        if (recordVoiceBtn.classList.contains('recording')) {
+            stopRecording();
+            resetRecordingUI();
+            voiceStatus.textContent = 'Запись завершена, нажмите "Отправить"';
+        } else {
+            startRecording();
+        }
+    });
+
+    cancelRecordingBtn.addEventListener('click', cancelRecording);
+    sendVoiceBtn.addEventListener('click', sendVoiceMessage);
+
+    // Обработчики для жанров
+    document.querySelectorAll('.genre-item').forEach(genre => {
+        genre.addEventListener('click', () => selectGenre(genre));
+    });
+
+    // Обработчики для ведущих
+    document.querySelectorAll('.host-card').forEach(host => {
+        host.addEventListener('click', () => selectHost(host));
+    });
+
+    // Обработчики плеера
+    if (audioPlayer) {
+        audioPlayer.addEventListener('play', () => {
+            isPlaying = true;
+            updatePlayPauseIcon();
+        });
+        audioPlayer.addEventListener('pause', () => {
+            isPlaying = false;
+            updatePlayPauseIcon();
+        });
+        audioPlayer.addEventListener('timeupdate', updateTime);
+        audioPlayer.addEventListener('loadedmetadata', updateTime);
+    }
+
+    if (videoPlayer) {
+        videoPlayer.addEventListener('play', () => {
+            isPlaying = true;
+            updatePlayPauseIcon();
+        });
+        videoPlayer.addEventListener('pause', () => {
+            isPlaying = false;
+            updatePlayPauseIcon();
+        });
+        videoPlayer.addEventListener('timeupdate', updateTime);
+        videoPlayer.addEventListener('loadedmetadata', updateTime);
+    }
+
+    // Приветственное сообщение
+    setTimeout(() => {
+        showNotification('Добро пожаловать! Выберите жанр, ведущего или включите "Мой поток"', 'info', 'Добро пожаловать');
+    }, 500);
+</script>
 {% endblock %}
