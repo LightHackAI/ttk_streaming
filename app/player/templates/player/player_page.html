@@ -1,1188 +1,538 @@
+{% extends 'player/base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Администрирование | Система управления потоковым вещанием</title>
-    <link rel="icon" type="image/x-icon" href="{% static 'logo.ico' %}">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f1f5f9;
-            min-height: 100vh;
-            padding: 0;
-        }
+{% block title %}Администрирование | Система управления потоковым вещанием{% endblock %}
 
-        /* Основной контейнер */
-        .admin-wrapper {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+{% block extra_css %}
+<style>
+    /* Заголовок раздела */
+    .section-header {
+        margin-bottom: 30px;
+    }
 
-        /* Верхняя панель навигации между модулями */
-        .module-navbar {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0 30px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            position: relative;
-        }
+    .section-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
 
-        .navbar-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            max-width: 1400px;
-            margin: 0 auto;
-            position: relative;
-        }
+    .section-description {
+        color: #64748b;
+        font-size: 14px;
+    }
 
-        /* Левая часть с логотипом */
-        .navbar-left {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-        }
+    /* Панель фильтрации */
+    .filter-panel {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
 
-        .logo-icon svg {
-            width: 80px;
-            height: auto;
-            color: #df3b3b;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
+    .filter-title {
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
 
-        .logo-icon svg:hover {
-            transform: scale(1.05);
-            color: #c92a2a;
-        }
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
 
-        /* Центральная часть с навигацией */
-        .navbar-center {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
 
-        .nav-modules {
-            display: flex;
-            gap: 8px;
-        }
+    .filter-group label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #475569;
+    }
 
-        .module-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 16px 24px;
-            color: #64748b;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 15px;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
-        }
+    .filter-group input,
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
 
-        .module-link svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 1.5;
-            fill: none;
-        }
+    .filter-group input:focus,
+    .filter-group select:focus {
+        border-color: #df3b3b;
+        box-shadow: 0 0 0 2px rgba(223, 59, 59, 0.1);
+    }
 
-        .module-link:hover {
-            color: #df3b3b;
-            background: #fef2f2;
-        }
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
 
-        .module-link.active {
-            color: #df3b3b;
-            border-bottom-color: #df3b3b;
-        }
+    .btn-filter, .btn-reset {
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
 
-        /* Правая часть с информацией о пользователе */
-        .navbar-right {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+    .btn-filter {
+        background: #df3b3b;
+        color: white;
+    }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            background: #f8fafc;
-            border-radius: 40px;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
+    .btn-filter:hover {
+        background: #c92a2a;
+    }
 
-        .user-info:hover {
-            background: #fef2f2;
-            border-color: #df3b3b;
-        }
+    .btn-reset {
+        background: #f1f5f9;
+        color: #475569;
+    }
 
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #df3b3b, #c92a2a);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-        }
+    .btn-reset:hover {
+        background: #e2e8f0;
+    }
 
-        .user-details {
-            display: flex;
-            flex-direction: column;
-        }
+    /* Таблица пользователей */
+    .users-table-container {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        overflow-x: auto;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
 
-        .user-name {
-            font-weight: 600;
-            color: #1e293b;
-            font-size: 14px;
-        }
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
 
-        .user-role {
-            font-size: 11px;
-            color: #df3b3b;
-            font-weight: 500;
-        }
+    .users-table th {
+        text-align: left;
+        padding: 16px 20px;
+        background: #f8fafc;
+        font-weight: 600;
+        color: #1e293b;
+        border-bottom: 1px solid #e2e8f0;
+    }
 
-        .logout-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            color: #64748b;
-        }
+    .users-table td {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+    }
 
-        .logout-btn:hover {
-            background: #fee2e2;
-            color: #df3b3b;
-        }
+    .users-table tr:hover {
+        background: #fef2f2;
+    }
 
-        .logout-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 1.5;
-            fill: none;
-        }
+    /* Бейджи ролей */
+    .roles-badge {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
 
-        /* Основной контент */
-        .admin-content {
-            flex: 1;
-            padding: 30px;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-        }
+    .role-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        background: #f1f5f9;
+        color: #475569;
+    }
 
-        /* Заголовок раздела */
-        .section-header {
-            margin-bottom: 30px;
-        }
+    .role-tag.admin {
+        background: #fee2e2;
+        color: #df3b3b;
+    }
 
-        .section-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 8px;
-        }
+    .role-tag.host {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
 
-        .section-description {
-            color: #64748b;
-            font-size: 14px;
-        }
+    .role-tag.user {
+        background: #dcfce7;
+        color: #16a34a;
+    }
 
-        /* Панель фильтрации */
-        .filter-panel {
-            background: white;
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
+    /* Кнопки действий */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 
-        .filter-title {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 16px;
-            font-size: 14px;
-        }
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        background: #f1f5f9;
+        color: #475569;
+    }
 
+    .action-btn:hover {
+        background: #e2e8f0;
+    }
+
+    .action-btn.edit:hover {
+        background: #e0f2fe;
+        color: #0284c7;
+    }
+
+    .action-btn.delete:hover {
+        background: #fee2e2;
+        color: #df3b3b;
+    }
+
+    .action-btn.password:hover {
+        background: #fef9c3;
+        color: #ca8a04;
+    }
+
+    .action-btn.roles:hover {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+
+    @media (max-width: 768px) {
         .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
+            grid-template-columns: 1fr;
         }
 
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .filter-group label {
-            font-size: 12px;
-            font-weight: 500;
-            color: #475569;
-        }
-
-        .filter-group input,
-        .filter-group select {
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .filter-group input:focus,
-        .filter-group select:focus {
-            border-color: #df3b3b;
-            box-shadow: 0 0 0 2px rgba(223, 59, 59, 0.1);
-        }
-
-        .filter-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-            margin-top: 8px;
-        }
-
-        .btn-filter, .btn-reset {
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-        }
-
-        .btn-filter {
-            background: #df3b3b;
-            color: white;
-        }
-
-        .btn-filter:hover {
-            background: #c92a2a;
-        }
-
-        .btn-reset {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .btn-reset:hover {
-            background: #e2e8f0;
-        }
-
-        /* Таблица пользователей */
-        .users-table-container {
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            overflow-x: auto;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-
-        .users-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-
-        .users-table th {
-            text-align: left;
-            padding: 16px 20px;
-            background: #f8fafc;
-            font-weight: 600;
-            color: #1e293b;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
+        .users-table th,
         .users-table td {
-            padding: 14px 20px;
-            border-bottom: 1px solid #f1f5f9;
-            color: #334155;
+            padding: 12px;
         }
 
-        .users-table tr:hover {
-            background: #fef2f2;
-        }
-
-        /* Бейджи ролей */
-        .roles-badge {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .role-tag {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .role-tag.admin {
-            background: #fee2e2;
-            color: #df3b3b;
-        }
-
-        .role-tag.host {
-            background: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .role-tag.user {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        /* Кнопки действий */
         .action-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .action-btn:hover {
-            background: #e2e8f0;
-        }
-
-        .action-btn.edit:hover {
-            background: #e0f2fe;
-            color: #0284c7;
-        }
-
-        .action-btn.delete:hover {
-            background: #fee2e2;
-            color: #df3b3b;
-        }
-
-        .action-btn.password:hover {
-            background: #fef9c3;
-            color: #ca8a04;
-        }
-
-        .action-btn.roles:hover {
-            background: #e0e7ff;
-            color: #4f46e5;
-        }
-
-        /* Модальные окна */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            animation: fadeIn 0.2s ease;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            padding: 30px;
-            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2);
-            animation: slideUp 0.3s ease;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .modal-header h3 {
-            font-size: 20px;
-            color: #1e293b;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #94a3b8;
-        }
-
-        .modal-body {
-            margin-bottom: 25px;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #1e293b;
-            font-weight: 500;
-            font-size: 14px;
-            margin-left: 4px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px 15px;
-            background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 14px;
-            color: #1e293b;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-
-        .form-group input:focus {
-            border-color: #df3b3b;
-            box-shadow: 0 0 0 3px rgba(223, 59, 59, 0.1);
-        }
-
-        .checkbox-group {
-            display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 10px;
         }
+    }
+</style>
+{% endblock %}
 
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Управление пользователями</h1>
+    <p class="section-description">Просмотр, редактирование и управление пользователями системы</p>
+</div>
 
-        .checkbox-item:hover {
-            background: #f8fafc;
-            border-color: #df3b3b;
-        }
-
-        .checkbox-item input {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .btn-cancel, .btn-save {
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .btn-cancel {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .btn-cancel:hover {
-            background: #e2e8f0;
-        }
-
-        .btn-save {
-            background: #df3b3b;
-            color: white;
-        }
-
-        .btn-save:hover {
-            background: #c92a2a;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(223, 59, 59, 0.3);
-        }
-
-        /* Заглушки для других модулей */
-        .placeholder-module {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .placeholder-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .placeholder-title {
-            font-size: 20px;
-            color: #1e293b;
-            margin-bottom: 10px;
-        }
-
-        .placeholder-text {
-            color: #64748b;
-        }
-
-        /* Анимации */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Выпадающее меню пользователя */
-        .user-menu {
-            position: relative;
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-            min-width: 200px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s;
-            z-index: 100;
-        }
-
-        .user-menu:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .dropdown-item {
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #334155;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .dropdown-item:hover {
-            background: #fef2f2;
-            color: #df3b3b;
-        }
-
-        .dropdown-item:first-child {
-            border-radius: 12px 12px 0 0;
-        }
-
-        .dropdown-item:last-child {
-            border-radius: 0 0 12px 12px;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        @media (max-width: 768px) {
-            .navbar-container {
-                flex-direction: column;
-                padding: 10px 0;
-            }
-
-            .navbar-left {
-                margin-bottom: 10px;
-            }
-
-            .navbar-center {
-                width: 100%;
-                overflow-x: auto;
-            }
-
-            .nav-modules {
-                justify-content: center;
-            }
-
-            .module-link span {
-                display: none;
-            }
-
-            .module-link {
-                padding: 12px;
-            }
-
-            .navbar-right {
-                margin-top: 10px;
-            }
-
-            .admin-content {
-                padding: 20px;
-            }
-
-            .filter-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .users-table th,
-            .users-table td {
-                padding: 12px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .user-name {
-                font-size: 12px;
-            }
-
-            .user-avatar {
-                width: 32px;
-                height: 32px;
-                font-size: 14px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="admin-wrapper">
-        <!-- Верхняя панель навигации -->
-        <nav class="module-navbar">
-            <div class="navbar-container">
-                <!-- Левая часть с логотипом -->
-                <div class="navbar-left">
-                    <div class="logo-icon">
-                        <svg viewBox="0 0 104 29" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M89 0H104L91 14L104 29H89L76 14L89 0Z" fill="currentColor"></path>
-                            <rect x="66" width="13" height="29" fill="currentColor"></rect>
-                            <rect x="42" width="13" height="29" fill="currentColor"></rect>
-                            <rect x="33" width="31" height="12" fill="currentColor"></rect>
-                            <rect x="9" width="13" height="29" fill="currentColor"></rect>
-                            <rect width="31" height="12" fill="currentColor"></rect>
-                        </svg>
-                    </div>
-                </div>
-
-                <!-- Центральная часть с навигацией -->
-                <div class="navbar-center">
-                    <div class="nav-modules">
-                        <a href="#" class="module-link active" data-module="admin">
-                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 12c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/>
-                            </svg>
-                            <span>Администрирование</span>
-                        </a>
-                        <a href="#" class="module-link" data-module="player">
-                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path d="M3 12h3l3-9 3 18 3-9h3"/>
-                            </svg>
-                            <span>Плеер</span>
-                        </a>
-                        <a href="#" class="module-link" data-module="host">
-                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                            </svg>
-                            <span>Раздел ведущего</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Правая часть с информацией о пользователе -->
-                <div class="navbar-right">
-                    <div class="user-menu">
-                        <div class="user-info" id="userInfo">
-                            <div class="user-avatar" id="userAvatar">А</div>
-                            <div class="user-details">
-                                <div class="user-name" id="userName">Администратор</div>
-                                <div class="user-role" id="userRole">Администратор</div>
-                            </div>
-                        </div>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item" onclick="showProfile()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                Профиль
-                            </div>
-                            <div class="dropdown-item" onclick="logout()">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                    <polyline points="16 17 21 12 16 7"></polyline>
-                                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                                </svg>
-                                Выйти
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Контент модуля администрирования -->
-        <div id="admin-module" class="admin-content">
-            <div class="section-header">
-                <h1 class="section-title">Управление пользователями</h1>
-                <p class="section-description">Просмотр, редактирование и управление пользователями системы</p>
-            </div>
-
-            <!-- Панель фильтрации -->
-            <div class="filter-panel">
-                <div class="filter-title">Фильтры</div>
-                <div class="filter-grid">
-                    <div class="filter-group">
-                        <label>Логин пользователя</label>
-                        <input type="text" id="filter-login" placeholder="Введите логин">
-                    </div>
-                    <div class="filter-group">
-                        <label>ФИО пользователя</label>
-                        <input type="text" id="filter-fio" placeholder="Введите ФИО">
-                    </div>
-                    <div class="filter-group">
-                        <label>Роль</label>
-                        <select id="filter-role">
-                            <option value="">Все роли</option>
-                            <option value="admin">Администратор</option>
-                            <option value="host">Ведущий</option>
-                            <option value="user">Пользователь</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Дата регистрации</label>
-                        <input type="date" id="filter-date">
-                    </div>
-                </div>
-                <div class="filter-actions">
-                    <button class="btn-filter" id="apply-filters">Применить</button>
-                    <button class="btn-reset" id="reset-filters">Сбросить</button>
-                </div>
-            </div>
-
-            <!-- Таблица списка пользователей -->
-            <div class="users-table-container">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Логин пользователя</th>
-                            <th>ФИО пользователя</th>
-                            <th>Роль</th>
-                            <th>Дата регистрации</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
-                        <!-- Данные будут вставлены через JavaScript -->
-                    </tbody>
-                </table>
-            </div>
+<!-- Панель фильтрации -->
+<div class="filter-panel">
+    <div class="filter-title">Фильтры</div>
+    <div class="filter-grid">
+        <div class="filter-group">
+            <label>Логин пользователя</label>
+            <input type="text" id="filter-login" placeholder="Введите логин">
         </div>
-
-        <!-- Заглушка для модуля Плеер -->
-        <div id="player-module" class="admin-content" style="display: none;">
-            <div class="placeholder-module">
-                <div class="placeholder-icon">🎬</div>
-                <h2 class="placeholder-title">Плеер</h2>
-                <p class="placeholder-text">Модуль плеера находится в разработке. Здесь будет отображаться видеоплеер для просмотра трансляций.</p>
-            </div>
+        <div class="filter-group">
+            <label>ФИО пользователя</label>
+            <input type="text" id="filter-fio" placeholder="Введите ФИО">
         </div>
-
-        <!-- Заглушка для раздела ведущего -->
-        <div id="host-module" class="admin-content" style="display: none;">
-            <div class="placeholder-module">
-                <div class="placeholder-icon">🎙️</div>
-                <h2 class="placeholder-title">Раздел ведущего</h2>
-                <p class="placeholder-text">Раздел ведущего находится в разработке. Здесь будет доступно управление трансляциями, чатом и контентом.</p>
-            </div>
+        <div class="filter-group">
+            <label>Роль</label>
+            <select id="filter-role">
+                <option value="">Все роли</option>
+                <option value="admin">Администратор</option>
+                <option value="host">Ведущий</option>
+                <option value="user">Пользователь</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Дата регистрации</label>
+            <input type="date" id="filter-date">
         </div>
     </div>
-
-    <!-- Модальное окно редактирования пользователя -->
-    <div id="edit-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Редактирование пользователя</h3>
-                <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-form">
-                    <div class="form-group">
-                        <label>Логин (латинские буквы)</label>
-                        <input type="text" id="edit-login" pattern="[A-Za-z0-9]+" required>
-                    </div>
-                    <div class="form-group">
-                        <label>ФИО (русские буквы)</label>
-                        <input type="text" id="edit-fullname" pattern="[А-Яа-я\s]+" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('edit-modal')">Отмена</button>
-                <button class="btn-save" onclick="saveEdit()">Сохранить</button>
-            </div>
-        </div>
+    <div class="filter-actions">
+        <button class="btn-filter" id="apply-filters">Применить</button>
+        <button class="btn-reset" id="reset-filters">Сбросить</button>
     </div>
+</div>
 
-    <!-- Модальное окно смены пароля -->
-    <div id="password-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Смена пароля</h3>
-                <button class="modal-close" onclick="closeModal('password-modal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="password-form">
-                    <div class="form-group">
-                        <label>Новый пароль (латинские буквы, цифры, символы)</label>
-                        <input type="password" id="new-password" pattern="[A-Za-z0-9!@#$%^&*]+" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Подтверждение пароля</label>
-                        <input type="password" id="confirm-password" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('password-modal')">Отмена</button>
-                <button class="btn-save" onclick="savePassword()">Сохранить</button>
-            </div>
+<!-- Таблица списка пользователей -->
+<div class="users-table-container">
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>Логин пользователя</th>
+                <th>ФИО пользователя</th>
+                <th>Роль</th>
+                <th>Дата регистрации</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody id="users-table-body">
+            <!-- Данные будут вставлены через JavaScript -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальные окна -->
+<div id="edit-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>✏️ Редактирование пользователя</h3>
+            <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
         </div>
-    </div>
-
-    <!-- Модальное окно назначения ролей -->
-    <div id="roles-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Назначение ролей</h3>
-                <button class="modal-close" onclick="closeModal('roles-modal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="checkbox-group" id="roles-checkboxes">
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="admin"> Администратор
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="host"> Ведущий
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" value="user"> Пользователь
-                    </label>
+        <div class="modal-body">
+            <form id="edit-form">
+                <div class="form-group">
+                    <label>Логин (латинские буквы)</label>
+                    <input type="text" id="edit-login" pattern="[A-Za-z0-9]+" required>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('roles-modal')">Отмена</button>
-                <button class="btn-save" onclick="saveRoles()">Сохранить</button>
-            </div>
+                <div class="form-group">
+                    <label>ФИО (русские буквы)</label>
+                    <input type="text" id="edit-fullname" pattern="[А-Яа-я\s]+" required>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('edit-modal')">Отмена</button>
+            <button class="btn-save" onclick="saveEdit()">Сохранить</button>
         </div>
     </div>
+</div>
 
-    <script>
-        // Данные текущего пользователя
-        let currentUser = {
-            id: 1,
-            name: "Администратор",
-            fullname: "Иванов Иван Иванович",
-            role: "admin",
-            avatar: "А"
-        };
+<div id="password-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🔐 Смена пароля</h3>
+            <button class="modal-close" onclick="closeModal('password-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="password-form">
+                <div class="form-group">
+                    <label>Новый пароль (латинские буквы, цифры, символы)</label>
+                    <input type="password" id="new-password" pattern="[A-Za-z0-9!@#$%^&*]+" required>
+                </div>
+                <div class="form-group">
+                    <label>Подтверждение пароля</label>
+                    <input type="password" id="confirm-password" required>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('password-modal')">Отмена</button>
+            <button class="btn-save" onclick="savePassword()">Сохранить</button>
+        </div>
+    </div>
+</div>
 
-        // Демонстрационные данные пользователей
-        let users = [
-            { id: 1, login: "admin", fullname: "Иванов Иван Иванович", roles: ["admin"], regDate: "2024-01-15" },
-            { id: 2, login: "john_doe", fullname: "Петров Петр Петрович", roles: ["user"], regDate: "2024-02-20" },
-            { id: 3, login: "host_user", fullname: "Сидорова Анна Михайловна", roles: ["host"], regDate: "2024-03-10" },
-            { id: 4, login: "multi_role", fullname: "Козлов Дмитрий Алексеевич", roles: ["user", "host"], regDate: "2024-04-05" }
-        ];
+<div id="roles-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>👥 Назначение ролей</h3>
+            <button class="modal-close" onclick="closeModal('roles-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="checkbox-group" id="roles-checkboxes">
+                <label class="checkbox-item">
+                    <input type="checkbox" value="admin">
+                    <span>👑 Администратор</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="host">
+                    <span>🎤 Ведущий</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" value="user">
+                    <span>👤 Пользователь</span>
+                </label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('roles-modal')">Отмена</button>
+            <button class="btn-save" onclick="saveRoles()">Сохранить</button>
+        </div>
+    </div>
+</div>
 
-        let currentUserId = null;
+<script>
+    // Демонстрационные данные пользователей
+    let users = [
+        { id: 1, login: "admin", fullname: "Иванов Иван Иванович", roles: ["admin"], regDate: "2024-01-15" },
+        { id: 2, login: "john_doe", fullname: "Петров Петр Петрович", roles: ["user"], regDate: "2024-02-20" },
+        { id: 3, login: "host_user", fullname: "Сидорова Анна Михайловна", roles: ["host"], regDate: "2024-03-10" },
+        { id: 4, login: "multi_role", fullname: "Козлов Дмитрий Алексеевич", roles: ["user", "host"], regDate: "2024-04-05" }
+    ];
 
-        // Обновление информации о пользователе в шапке
-        function updateUserInfo() {
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Администратор' :
-                                                              (currentUser.role === 'host' ? 'Ведущий' : 'Пользователь');
-            document.getElementById('userAvatar').textContent = currentUser.avatar;
-        }
+    let currentUserId = null;
 
-        // Функция для отображения таблицы пользователей
-        function renderUsersTable() {
-            const tbody = document.getElementById('users-table-body');
-            const filterLogin = document.getElementById('filter-login').value.toLowerCase();
-            const filterFio = document.getElementById('filter-fio').value.toLowerCase();
-            const filterRole = document.getElementById('filter-role').value;
-            const filterDate = document.getElementById('filter-date').value;
+    function renderUsersTable() {
+        const tbody = document.getElementById('users-table-body');
+        const filterLogin = document.getElementById('filter-login').value.toLowerCase();
+        const filterFio = document.getElementById('filter-fio').value.toLowerCase();
+        const filterRole = document.getElementById('filter-role').value;
+        const filterDate = document.getElementById('filter-date').value;
 
-            let filteredUsers = users.filter(user => {
-                let match = true;
-                if (filterLogin && !user.login.toLowerCase().includes(filterLogin)) match = false;
-                if (filterFio && !user.fullname.toLowerCase().includes(filterFio)) match = false;
-                if (filterRole && !user.roles.includes(filterRole)) match = false;
-                if (filterDate && user.regDate !== filterDate) match = false;
-                return match;
-            });
+        let filteredUsers = users.filter(user => {
+            let match = true;
+            if (filterLogin && !user.login.toLowerCase().includes(filterLogin)) match = false;
+            if (filterFio && !user.fullname.toLowerCase().includes(filterFio)) match = false;
+            if (filterRole && !user.roles.includes(filterRole)) match = false;
+            if (filterDate && user.regDate !== filterDate) match = false;
+            return match;
+        });
 
-            tbody.innerHTML = filteredUsers.map(user => `
-                <tr>
-                    <td>${user.login}</td>
-                    <td>${user.fullname}</td>
-                    <td>
-                        <div class="roles-badge">
-                            ${user.roles.map(role => {
-                                let roleName = role === 'admin' ? 'Администратор' : (role === 'host' ? 'Ведущий' : 'Пользователь');
-                                let roleClass = role === 'admin' ? 'admin' : (role === 'host' ? 'host' : 'user');
-                                return `<span class="role-tag ${roleClass}">${roleName}</span>`;
-                            }).join('')}
-                        </div>
-                    </td>
-                    <td>${user.regDate}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="action-btn edit" onclick="editUser(${user.id})">Редактировать</button>
-                            <button class="action-btn delete" onclick="deleteUser(${user.id})">Удалить</button>
-                            <button class="action-btn password" onclick="changePassword(${user.id})">Сменить пароль</button>
-                            <button class="action-btn roles" onclick="assignRoles(${user.id})">Назначить роли</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        tbody.innerHTML = filteredUsers.map(user => `
+            <tr>
+                <td><strong>${user.login}</strong></td>
+                <td>${user.fullname}</td>
+                <td>
+                    <div class="roles-badge">
+                        ${user.roles.map(role => {
+                            let roleName = role === 'admin' ? 'Администратор' : (role === 'host' ? 'Ведущий' : 'Пользователь');
+                            let roleClass = role === 'admin' ? 'admin' : (role === 'host' ? 'host' : 'user');
+                            return `<span class="role-tag ${roleClass}">${roleName}</span>`;
+                        }).join('')}
+                    </div>
+                </td>
+                <td>${user.regDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn edit" onclick="editUser(${user.id})">Редактировать</button>
+                        <button class="action-btn delete" onclick="deleteUser(${user.id})">Удалить</button>
+                        <button class="action-btn password" onclick="changePassword(${user.id})">Сменить пароль</button>
+                        <button class="action-btn roles" onclick="assignRoles(${user.id})">Назначить роли</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
 
-        // Редактирование пользователя
-        function editUser(userId) {
-            const user = users.find(u => u.id === userId);
-            if (user) {
-                currentUserId = userId;
-                document.getElementById('edit-login').value = user.login;
-                document.getElementById('edit-fullname').value = user.fullname;
-                openModal('edit-modal');
-            }
-        }
-
-        function saveEdit() {
-            const login = document.getElementById('edit-login').value;
-            const fullname = document.getElementById('edit-fullname').value;
-
-            if (!/^[A-Za-z0-9]+$/.test(login)) {
-                alert('Логин должен содержать только латинские буквы и цифры');
-                return;
-            }
-            if (!/^[А-Яа-я\s]+$/.test(fullname)) {
-                alert('ФИО должно содержать только русские буквы');
-                return;
-            }
-
-            const user = users.find(u => u.id === currentUserId);
-            if (user) {
-                user.login = login;
-                user.fullname = fullname;
-                renderUsersTable();
-                closeModal('edit-modal');
-                alert('Пользователь успешно обновлен');
-            }
-        }
-
-        // Удаление пользователя
-        function deleteUser(userId) {
-            if (confirm('Вы уверены, что хотите удалить этого пользователя? Данные останутся в истории.')) {
-                users = users.filter(u => u.id !== userId);
-                renderUsersTable();
-                alert('Пользователь успешно удален');
-            }
-        }
-
-        // Смена пароля
-        function changePassword(userId) {
+    function editUser(userId) {
+        const user = users.find(u => u.id === userId);
+        if (user) {
             currentUserId = userId;
-            document.getElementById('new-password').value = '';
-            document.getElementById('confirm-password').value = '';
-            openModal('password-modal');
+            document.getElementById('edit-login').value = user.login;
+            document.getElementById('edit-fullname').value = user.fullname;
+            openModal('edit-modal');
+        }
+    }
+
+    function saveEdit() {
+        const login = document.getElementById('edit-login').value;
+        const fullname = document.getElementById('edit-fullname').value;
+
+        if (!/^[A-Za-z0-9]+$/.test(login)) {
+            alert('⚠️ Логин должен содержать только латинские буквы и цифры');
+            return;
+        }
+        if (!/^[А-Яа-я\s]+$/.test(fullname)) {
+            alert('⚠️ ФИО должно содержать только русские буквы');
+            return;
         }
 
-        function savePassword() {
-            const newPass = document.getElementById('new-password').value;
-            const confirmPass = document.getElementById('confirm-password').value;
+        const user = users.find(u => u.id === currentUserId);
+        if (user) {
+            user.login = login;
+            user.fullname = fullname;
+            renderUsersTable();
+            closeModal('edit-modal');
+            alert('✅ Пользователь успешно обновлен');
+        }
+    }
 
-            if (!/^[A-Za-z0-9!@#$%^&*]+$/.test(newPass)) {
-                alert('Пароль должен содержать только латинские буквы, цифры и символы !@#$%^&*');
-                return;
-            }
-            if (newPass !== confirmPass) {
-                alert('Пароли не совпадают');
-                return;
-            }
-            if (newPass.length < 6) {
-                alert('Пароль должен содержать минимум 6 символов');
-                return;
-            }
+    function deleteUser(userId) {
+        if (confirm('🗑️ Вы уверены, что хотите удалить этого пользователя?\nДанные останутся в истории.')) {
+            users = users.filter(u => u.id !== userId);
+            renderUsersTable();
+            alert('✅ Пользователь успешно удален');
+        }
+    }
 
-            alert(`Пароль для пользователя ${users.find(u => u.id === currentUserId)?.login} успешно изменен`);
-            closeModal('password-modal');
+    function changePassword(userId) {
+        currentUserId = userId;
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        openModal('password-modal');
+    }
+
+    function savePassword() {
+        const newPass = document.getElementById('new-password').value;
+        const confirmPass = document.getElementById('confirm-password').value;
+
+        if (!/^[A-Za-z0-9!@#$%^&*]+$/.test(newPass)) {
+            alert('⚠️ Пароль должен содержать только латинские буквы, цифры и символы !@#$%^&*');
+            return;
+        }
+        if (newPass !== confirmPass) {
+            alert('⚠️ Пароли не совпадают');
+            return;
+        }
+        if (newPass.length < 6) {
+            alert('⚠️ Пароль должен содержать минимум 6 символов');
+            return;
         }
 
-        // Назначение ролей
-        function assignRoles(userId) {
-            const user = users.find(u => u.id === userId);
-            if (user) {
-                currentUserId = userId;
-                const checkboxes = document.querySelectorAll('#roles-checkboxes input');
-                checkboxes.forEach(cb => {
-                    cb.checked = user.roles.includes(cb.value);
-                });
-                openModal('roles-modal');
-            }
-        }
+        alert(`✅ Пароль для пользователя ${users.find(u => u.id === currentUserId)?.login} успешно изменен`);
+        closeModal('password-modal');
+    }
 
-        function saveRoles() {
-            const user = users.find(u => u.id === currentUserId);
-            if (user) {
-                const selectedRoles = Array.from(document.querySelectorAll('#roles-checkboxes input:checked')).map(cb => cb.value);
-                const currentAdmin = users.find(u => u.roles.includes('admin') && u.id === 1);
-                if (currentAdmin && currentAdmin.id === 1) {
-                    user.roles = selectedRoles;
-                    renderUsersTable();
-                    closeModal('roles-modal');
-                    alert('Роли успешно назначены');
-                } else {
-                    alert('Только администратор может назначать роли');
-                }
-            }
-        }
-
-        // Профиль пользователя
-        function showProfile() {
-            alert(`Информация о пользователе:\nИмя: ${currentUser.name}\nФИО: ${currentUser.fullname}\nРоль: ${currentUser.role === 'admin' ? 'Администратор' : (currentUser.role === 'host' ? 'Ведущий' : 'Пользователь')}`);
-        }
-
-        // Выход из системы
-        function logout() {
-            if (confirm('Вы уверены, что хотите выйти из системы?')) {
-                alert('Выход из системы...');
-                // Здесь будет логика выхода
-                window.location.href = '/login';
-            }
-        }
-
-        // Модальные окна
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        // Навигация между модулями
-        document.querySelectorAll('.module-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const module = link.dataset.module;
-
-                document.querySelectorAll('.module-link').forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-
-                document.getElementById('admin-module').style.display = module === 'admin' ? 'block' : 'none';
-                document.getElementById('player-module').style.display = module === 'player' ? 'block' : 'none';
-                document.getElementById('host-module').style.display = module === 'host' ? 'block' : 'none';
+    function assignRoles(userId) {
+        const user = users.find(u => u.id === userId);
+        if (user) {
+            currentUserId = userId;
+            const checkboxes = document.querySelectorAll('#roles-checkboxes input');
+            checkboxes.forEach(cb => {
+                cb.checked = user.roles.includes(cb.value);
             });
-        });
+            openModal('roles-modal');
+        }
+    }
 
-        // Фильтрация
-        document.getElementById('apply-filters').addEventListener('click', () => {
-            renderUsersTable();
-        });
-
-        document.getElementById('reset-filters').addEventListener('click', () => {
-            document.getElementById('filter-login').value = '';
-            document.getElementById('filter-fio').value = '';
-            document.getElementById('filter-role').value = '';
-            document.getElementById('filter-date').value = '';
-            renderUsersTable();
-        });
-
-        // Инициализация
-        updateUserInfo();
-        renderUsersTable();
-
-        // Закрытие модального окна при клике вне его
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                closeModal(event.target.id);
+    function saveRoles() {
+        const user = users.find(u => u.id === currentUserId);
+        if (user) {
+            const selectedRoles = Array.from(document.querySelectorAll('#roles-checkboxes input:checked')).map(cb => cb.value);
+            const currentAdmin = users.find(u => u.roles.includes('admin') && u.id === 1);
+            if (currentAdmin && currentAdmin.id === 1) {
+                user.roles = selectedRoles;
+                renderUsersTable();
+                closeModal('roles-modal');
+                alert('✅ Роли успешно назначены');
+            } else {
+                alert('⚠️ Только администратор может назначать роли');
             }
         }
-    </script>
-</body>
-</html>
+    }
+
+    document.getElementById('apply-filters').addEventListener('click', () => {
+        renderUsersTable();
+    });
+
+    document.getElementById('reset-filters').addEventListener('click', () => {
+        document.getElementById('filter-login').value = '';
+        document.getElementById('filter-fio').value = '';
+        document.getElementById('filter-role').value = '';
+        document.getElementById('filter-date').value = '';
+        renderUsersTable();
+    });
+
+    renderUsersTable();
+</script>
+{% endblock %}

@@ -64,4 +64,4 @@ def user_logout(request):
     """Выход из системы"""
     logout(request)
     messages.info(request, 'Вы вышли из системы')
-    return redirect('login')
+    return redirect('accounts:login')

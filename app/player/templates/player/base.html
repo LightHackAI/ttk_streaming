@@ -1,0 +1,667 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Система управления потоковым вещанием{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'logo.ico' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        /* Основной контейнер */
+        .admin-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Верхняя панель навигации */
+        .module-navbar {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .navbar-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Левая часть с логотипом */
+        .navbar-left {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon svg {
+            width: 80px;
+            height: auto;
+            color: #df3b3b;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .logo-icon svg:hover {
+            transform: scale(1.05);
+            color: #c92a2a;
+        }
+
+        /* Центральная часть с навигацией */
+        .navbar-center {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-modules {
+            display: flex;
+            gap: 8px;
+        }
+
+        .module-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 24px;
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .module-link svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.5;
+            fill: none;
+        }
+
+        .module-link:hover {
+            color: #df3b3b;
+            background: #fef2f2;
+        }
+
+        .module-link.active {
+            color: #df3b3b;
+            border-bottom-color: #df3b3b;
+        }
+
+        /* Правая часть с информацией о пользователе */
+        .navbar-right {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: #f8fafc;
+            border-radius: 40px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .user-info:hover {
+            background: #fef2f2;
+            border-color: #df3b3b;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #df3b3b, #c92a2a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: #df3b3b;
+            font-weight: 500;
+        }
+
+        /* Выпадающее меню пользователя */
+        .user-menu {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .user-menu:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #334155;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background: #fef2f2;
+            color: #df3b3b;
+        }
+
+        .dropdown-item:first-child {
+            border-radius: 12px 12px 0 0;
+        }
+
+        .dropdown-item:last-child {
+            border-radius: 0 0 12px 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Основной контент */
+        .admin-content {
+            flex: 1;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Модальные окна - улучшенный дизайн */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 500px;
+            animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #df3b3b 0%, #c92a2a 100%);
+            padding: 24px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 28px;
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: #df3b3b;
+            box-shadow: 0 0 0 3px rgba(223, 59, 59, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .checkbox-item:hover {
+            border-color: #df3b3b;
+            background: #fef2f2;
+            transform: translateX(4px);
+        }
+
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #df3b3b;
+        }
+
+        .checkbox-item span {
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .btn-cancel, .btn-save {
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #df3b3b, #c92a2a);
+            color: white;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(223, 59, 59, 0.3);
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-container {
+                flex-direction: column;
+                padding: 10px 0;
+            }
+
+            .navbar-left {
+                margin-bottom: 10px;
+            }
+
+            .navbar-center {
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            .nav-modules {
+                justify-content: center;
+            }
+
+            .module-link span {
+                display: none;
+            }
+
+            .module-link {
+                padding: 12px;
+            }
+
+            .navbar-right {
+                margin-top: 10px;
+            }
+
+            .admin-content {
+                padding: 20px;
+            }
+
+            .user-name {
+                font-size: 12px;
+            }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Верхняя панель навигации -->
+        <nav class="module-navbar">
+            <div class="navbar-container">
+                <!-- Левая часть с логотипом -->
+                <div class="navbar-left">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 104 29" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M89 0H104L91 14L104 29H89L76 14L89 0Z" fill="currentColor"></path>
+                            <rect x="66" width="13" height="29" fill="currentColor"></rect>
+                            <rect x="42" width="13" height="29" fill="currentColor"></rect>
+                            <rect x="33" width="31" height="12" fill="currentColor"></rect>
+                            <rect x="9" width="13" height="29" fill="currentColor"></rect>
+                            <rect width="31" height="12" fill="currentColor"></rect>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Центральная часть с навигацией -->
+                <div class="navbar-center">
+                    <div class="nav-modules">
+                        <a href="" class="module-link {% if active_module == 'admin' %}active{% endif %}">
+                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 12c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/>
+                            </svg>
+                            <span>Администрирование</span>
+                        </a>
+                        <a href="" class="module-link {% if active_module == 'player' %}active{% endif %}">
+                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path d="M3 12h3l3-9 3 18 3-9h3"/>
+                            </svg>
+                            <span>Плеер</span>
+                        </a>
+                        <a href="" class="module-link {% if active_module == 'host' %}active{% endif %}">
+                            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                            </svg>
+                            <span>Раздел ведущего</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Правая часть с информацией о пользователе -->
+                <div class="navbar-right">
+                    <div class="user-menu">
+                        <div class="user-info" id="userInfo">
+                            <div class="user-avatar" id="userAvatar">{{ user.username|first|upper }}</div>
+                            <div class="user-details">
+                                <div class="user-name" id="userName">{{ user.get_full_name|default:user.username }}</div>
+                                <div class="user-role" id="userRole">
+                                    {% if user.is_superuser %}Администратор
+                                    {% elif user.groups.all %}Ведущий
+                                    {% else %}Пользователь{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="showProfileModal()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                Профиль
+                            </div>
+                            <div class="dropdown-item" onclick="logout()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                Выйти
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Основной контент -->
+        <main class="admin-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Модальное окно профиля -->
+    <div id="profile-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Профиль пользователя
+                </h3>
+                <button class="modal-close" onclick="closeModal('profile-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #df3b3b, #c92a2a); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                        <span style="font-size: 32px; color: white; font-weight: bold;" id="profileAvatar">{{ user.username|first|upper }}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Имя пользователя</label>
+                    <input type="text" id="profileUsername" value="{{ user.username }}" readonly disabled>
+                </div>
+                <div class="form-group">
+                    <label>Полное имя</label>
+                    <input type="text" id="profileFullname" value="{{ user.get_full_name|default:'Не указано' }}" readonly disabled>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="profileEmail" value="{{ user.email|default:'Не указан' }}" readonly disabled>
+                </div>
+                <div class="form-group">
+                    <label>Роль</label>
+                    <input type="text" id="profileRole" value="{% if user.is_superuser %}Администратор{% elif user.groups.all %}Ведущий{% else %}Пользователь{% endif %}" readonly disabled>
+                </div>
+                <div class="form-group">
+                    <label>Дата регистрации</label>
+                    <input type="text" id="profileDate" value="{{ user.date_joined|date:'d.m.Y' }}" readonly disabled>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('profile-modal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения выхода -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Подтверждение выхода
+                </h3>
+                <button class="modal-close" onclick="closeModal('logout-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div style="font-size: 48px; margin-bottom: 20px;">🚪</div>
+                <p style="font-size: 16px; color: #1e293b; margin-bottom: 10px;">Вы уверены, что хотите выйти из системы?</p>
+                <p style="font-size: 14px; color: #64748b;">Все несохраненные изменения будут потеряны.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('logout-modal')">Отмена</button>
+                <button class="btn-save" onclick="confirmLogout()">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Функции для модальных окон
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Показать модальное окно профиля
+        function showProfileModal() {
+            openModal('profile-modal');
+        }
+
+        // Выход из системы
+        function logout() {
+            openModal('logout-modal');
+        }
+
+        function confirmLogout() {
+            window.location.href = '{% url "accounts:logout" %}';
+        }
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal(event.target.id);
+            }
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
