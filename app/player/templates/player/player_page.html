@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-fgfgkdf
-</body>
-</html>
+{% extends 'player/base.html' %}
+{% load static %}
+
+{% block title %}Плеер | Система управления потоковым вещанием{% endblock %}
+
+{% block extra_css %}
+<style>
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h1 class="section-title">Плеер</h1>
+    <p class="section-description">Прослушивание, просмотр и управление аудио и видео</p>
+</div>
+{% endblock %}

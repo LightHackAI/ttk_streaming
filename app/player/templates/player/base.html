@@ -123,7 +123,6 @@
             padding: 8px 16px;
             background: #f8fafc;
             border-radius: 40px;
-            border: 1px solid #e2e8f0;
             transition: all 0.2s ease;
             cursor: pointer;
         }
@@ -248,7 +247,7 @@
 
         .modal-content {
             background: white;
-            border-radius: 24px;
+            border-radius: 18px;
             width: 90%;
             max-width: 500px;
             animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
@@ -266,7 +265,7 @@
         }
 
         .modal-header h3 {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             margin: 0;
             display: flex;
@@ -388,7 +387,6 @@
 
         .btn-cancel:hover {
             background: #e2e8f0;
-            transform: translateY(-1px);
         }
 
         .btn-save {
@@ -397,7 +395,6 @@
         }
 
         .btn-save:hover {
-            transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(223, 59, 59, 0.3);
         }
 
@@ -493,7 +490,7 @@
                 <!-- Центральная часть с навигацией -->
                 <div class="navbar-center">
                     <div class="nav-modules">
-                        {% if request.user.role == 'admin' %}
+                        {% if request.user.is_admin %}
                         <a href="{% url 'player:admin_panel' %}" class="module-link {% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 12c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/>
@@ -501,7 +498,7 @@
                             <span>Администрирование</span>
                         </a>
                         {% endif %}
-                        <a href="" class="module-link {% if active_module == 'player' %}active{% endif %}">
+                        <a href="{% url 'player:player_page' %}" class="module-link {% if request.resolver_match.url_name == 'player_page' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path d="M3 12h3l3-9 3 18 3-9h3"/>
                             </svg>
@@ -572,11 +569,6 @@
                 <button class="modal-close" onclick="closeModal('profile-modal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #df3b3b, #c92a2a); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px;">
-                        <span style="font-size: 32px; color: white; font-weight: bold;" id="profileAvatar">{{ user.username|first|upper }}</span>
-                    </div>
-                </div>
                 <div class="form-group">
                     <label>Имя пользователя</label>
                     <input type="text" id="profileUsername" value="{{ user.username }}" readonly disabled>
@@ -598,9 +590,6 @@
                     <input type="text" id="profileDate" value="{{ user.date_joined|date:'d.m.Y' }}" readonly disabled>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('profile-modal')">Закрыть</button>
-            </div>
         </div>
     </div>
 
@@ -619,12 +608,10 @@
                 <button class="modal-close" onclick="closeModal('logout-modal')">&times;</button>
             </div>
             <div class="modal-body" style="text-align: center;">
-                <div style="font-size: 48px; margin-bottom: 20px;">🚪</div>
                 <p style="font-size: 16px; color: #1e293b; margin-bottom: 10px;">Вы уверены, что хотите выйти из системы?</p>
                 <p style="font-size: 14px; color: #64748b;">Все несохраненные изменения будут потеряны.</p>
             </div>
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeModal('logout-modal')">Отмена</button>
                 <button class="btn-save" onclick="confirmLogout()">Выйти</button>
             </div>
         </div>

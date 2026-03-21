@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -26,6 +27,20 @@ class User(AbstractUser):
         default='user',
         verbose_name='Роль'
     )
+    # Поле для мягкого удаления
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name='Удален'
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Дата удаления'
+    )
+    date_joined = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Дата регистрации'
+    )
 
     class Meta:
         db_table = 'auth_user'
@@ -34,3 +49,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+    def is_admin(self):
+        """Проверка, является ли пользователь администратором"""
+        return self.role == 'admin'

@@ -8,6 +8,7 @@
     /* Заголовок раздела */
     .section-header {
         margin-bottom: 30px;
+        text-align: center;
     }
 
     .section-title {
@@ -144,20 +145,12 @@
     }
 
     /* Бейджи ролей */
-    .roles-badge {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-
     .role-tag {
         display: inline-block;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 20px;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 500;
-        background: #f1f5f9;
-        color: #475569;
     }
 
     .role-tag.admin {
@@ -165,7 +158,7 @@
         color: #df3b3b;
     }
 
-    .role-tag.host {
+    .role-tag.leader {
         background: #e0f2fe;
         color: #0284c7;
     }
@@ -213,9 +206,158 @@
         color: #ca8a04;
     }
 
-    .action-btn.roles:hover {
+    .action-btn.role:hover {
         background: #e0e7ff;
         color: #4f46e5;
+    }
+
+    /* Модальные окна */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        animation: slideDown 0.3s;
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #94a3b8;
+        transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+        color: #df3b3b;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #df3b3b;
+        box-shadow: 0 0 0 2px rgba(223, 59, 59, 0.1);
+    }
+
+    .btn-cancel, .btn-save {
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-cancel:hover {
+        background: #e2e8f0;
+    }
+
+    .btn-save {
+        background: #df3b3b;
+        color: white;
+    }
+
+    .btn-save:hover {
+        background: #c92a2a;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+    }
+
+    .error-message {
+        color: #df3b3b;
+        font-size: 12px;
+        margin-top: 5px;
     }
 
     @media (max-width: 768px) {
@@ -230,6 +372,11 @@
 
         .action-buttons {
             flex-direction: column;
+        }
+
+        .modal-content {
+            margin: 10% auto;
+            width: 95%;
         }
     }
 </style>
@@ -258,7 +405,7 @@
             <select id="filter-role">
                 <option value="">Все роли</option>
                 <option value="admin">Администратор</option>
-                <option value="host">Ведущий</option>
+                <option value="leader">Ведущий</option>
                 <option value="user">Пользователь</option>
             </select>
         </div>
@@ -286,27 +433,31 @@
             </tr>
         </thead>
         <tbody id="users-table-body">
-            <!-- Данные будут вставлены через JavaScript -->
+            <tr>
+                <td colspan="5" class="loading">Загрузка...</td>
+            </tr>
         </tbody>
     </table>
 </div>
 
-<!-- Модальные окна -->
+<!-- Модальное окно редактирования -->
 <div id="edit-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>✏️ Редактирование пользователя</h3>
+            <h3>Редактирование пользователя</h3>
             <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
         </div>
         <div class="modal-body">
             <form id="edit-form">
                 <div class="form-group">
-                    <label>Логин (латинские буквы)</label>
-                    <input type="text" id="edit-login" pattern="[A-Za-z0-9]+" required>
+                    <label>Логин (латинские буквы и цифры)</label>
+                    <input type="text" id="edit-login" required>
+                    <div class="error-message" id="edit-login-error"></div>
                 </div>
                 <div class="form-group">
                     <label>ФИО (русские буквы)</label>
-                    <input type="text" id="edit-fullname" pattern="[А-Яа-я\s]+" required>
+                    <input type="text" id="edit-fullname" required>
+                    <div class="error-message" id="edit-fullname-error"></div>
                 </div>
             </form>
         </div>
@@ -317,21 +468,29 @@
     </div>
 </div>
 
+<!-- Модальное окно смены пароля -->
 <div id="password-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>🔐 Смена пароля</h3>
+            <h3>Смена пароля</h3>
             <button class="modal-close" onclick="closeModal('password-modal')">&times;</button>
         </div>
         <div class="modal-body">
             <form id="password-form">
                 <div class="form-group">
-                    <label>Новый пароль (латинские буквы, цифры, символы)</label>
-                    <input type="password" id="new-password" pattern="[A-Za-z0-9!@#$%^&*]+" required>
+                    <label>Старый пароль</label>
+                    <input type="password" id="old-password" required>
+                    <div class="error-message" id="old-password-error"></div>
+                </div>
+                <div class="form-group">
+                    <label>Новый пароль (мин. 6 символов, латинские буквы, цифры, символы)</label>
+                    <input type="password" id="new-password" required>
+                    <div class="error-message" id="new-password-error"></div>
                 </div>
                 <div class="form-group">
                     <label>Подтверждение пароля</label>
                     <input type="password" id="confirm-password" required>
+                    <div class="error-message" id="confirm-password-error"></div>
                 </div>
             </form>
         </div>
@@ -342,187 +501,352 @@
     </div>
 </div>
 
-<div id="roles-modal" class="modal">
+<!-- Модальное окно назначения роли -->
+<div id="role-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>👥 Назначение ролей</h3>
-            <button class="modal-close" onclick="closeModal('roles-modal')">&times;</button>
+            <h3>Назначение роли</h3>
+            <button class="modal-close" onclick="closeModal('role-modal')">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="checkbox-group" id="roles-checkboxes">
-                <label class="checkbox-item">
-                    <input type="checkbox" value="admin">
-                    <span>👑 Администратор</span>
-                </label>
-                <label class="checkbox-item">
-                    <input type="checkbox" value="host">
-                    <span>🎤 Ведущий</span>
-                </label>
-                <label class="checkbox-item">
-                    <input type="checkbox" value="user">
-                    <span>👤 Пользователь</span>
-                </label>
-            </div>
+            <form id="role-form">
+                <div class="form-group">
+                    <label>Выберите роль</label>
+                    <select id="role-select" class="form-control">
+                        <option value="user">Пользователь</option>
+                        <option value="leader">Ведущий</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+            </form>
         </div>
         <div class="modal-footer">
-            <button class="btn-cancel" onclick="closeModal('roles-modal')">Отмена</button>
-            <button class="btn-save" onclick="saveRoles()">Сохранить</button>
+            <button class="btn-cancel" onclick="closeModal('role-modal')">Отмена</button>
+            <button class="btn-save" onclick="saveRole()">Сохранить</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Демонстрационные данные пользователей
-    let users = [
-        { id: 1, login: "admin", fullname: "Иванов Иван Иванович", roles: ["admin"], regDate: "2024-01-15" },
-        { id: 2, login: "john_doe", fullname: "Петров Петр Петрович", roles: ["user"], regDate: "2024-02-20" },
-        { id: 3, login: "host_user", fullname: "Сидорова Анна Михайловна", roles: ["host"], regDate: "2024-03-10" },
-        { id: 4, login: "multi_role", fullname: "Козлов Дмитрий Алексеевич", roles: ["user", "host"], regDate: "2024-04-05" }
-    ];
-
     let currentUserId = null;
+    let csrfToken = null;
 
-    function renderUsersTable() {
+    // Получаем CSRF токен
+    function getCSRFToken() {
+        if (csrfToken) return csrfToken;
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                csrfToken = value;
+                return csrfToken;
+            }
+        }
+        return '';
+    }
+
+    // Загрузка списка пользователей
+    async function loadUsers() {
         const tbody = document.getElementById('users-table-body');
-        const filterLogin = document.getElementById('filter-login').value.toLowerCase();
-        const filterFio = document.getElementById('filter-fio').value.toLowerCase();
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">Загрузка...</td></tr>';
+
+        const filterLogin = document.getElementById('filter-login').value;
+        const filterFio = document.getElementById('filter-fio').value;
         const filterRole = document.getElementById('filter-role').value;
         const filterDate = document.getElementById('filter-date').value;
 
-        let filteredUsers = users.filter(user => {
-            let match = true;
-            if (filterLogin && !user.login.toLowerCase().includes(filterLogin)) match = false;
-            if (filterFio && !user.fullname.toLowerCase().includes(filterFio)) match = false;
-            if (filterRole && !user.roles.includes(filterRole)) match = false;
-            if (filterDate && user.regDate !== filterDate) match = false;
-            return match;
-        });
+        const params = new URLSearchParams();
+        if (filterLogin) params.append('login', filterLogin);
+        if (filterFio) params.append('fullname', filterFio);
+        if (filterRole) params.append('role', filterRole);
+        if (filterDate) params.append('reg_date', filterDate);
 
-        tbody.innerHTML = filteredUsers.map(user => `
-            <tr>
-                <td><strong>${user.login}</strong></td>
-                <td>${user.fullname}</td>
-                <td>
-                    <div class="roles-badge">
-                        ${user.roles.map(role => {
-                            let roleName = role === 'admin' ? 'Администратор' : (role === 'host' ? 'Ведущий' : 'Пользователь');
-                            let roleClass = role === 'admin' ? 'admin' : (role === 'host' ? 'host' : 'user');
-                            return `<span class="role-tag ${roleClass}">${roleName}</span>`;
-                        }).join('')}
-                    </div>
-                </td>
-                <td>${user.regDate}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="action-btn edit" onclick="editUser(${user.id})">Редактировать</button>
-                        <button class="action-btn delete" onclick="deleteUser(${user.id})">Удалить</button>
-                        <button class="action-btn password" onclick="changePassword(${user.id})">Сменить пароль</button>
-                        <button class="action-btn roles" onclick="assignRoles(${user.id})">Назначить роли</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    }
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/?${params.toString()}`);
+            const data = await response.json();
 
-    function editUser(userId) {
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            currentUserId = userId;
-            document.getElementById('edit-login').value = user.login;
-            document.getElementById('edit-fullname').value = user.fullname;
-            openModal('edit-modal');
+            if (data.users && data.users.length > 0) {
+                renderUsersTable(data.users);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">Пользователи не найдены</td></tr>';
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            tbody.innerHTML = '<tr><td colspan="5" class="loading">Ошибка загрузки данных</td></tr>';
         }
     }
 
-    function saveEdit() {
-        const login = document.getElementById('edit-login').value;
-        const fullname = document.getElementById('edit-fullname').value;
+    // Отрисовка таблицы
+    function renderUsersTable(users) {
+        const tbody = document.getElementById('users-table-body');
+
+        tbody.innerHTML = users.map(user => {
+            let roleName = '';
+            let roleClass = '';
+
+            if (user.role === 'admin') {
+                roleName = 'Администратор';
+                roleClass = 'admin';
+            } else if (user.role === 'leader') {
+                roleName = 'Ведущий';
+                roleClass = 'leader';
+            } else {
+                roleName = 'Пользователь';
+                roleClass = 'user';
+            }
+
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(user.login)}</strong></td>
+                    <td>${escapeHtml(user.fullname)}</td>
+                    <td><span class="role-tag ${roleClass}">${roleName}</span></td>
+                    <td>${user.regDate}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn edit" onclick="editUser(${user.id})">Редактировать</button>
+                            <button class="action-btn delete" onclick="deleteUser(${user.id})">Удалить</button>
+                            <button class="action-btn password" onclick="changePassword(${user.id})">Сменить пароль</button>
+                            <button class="action-btn role" onclick="assignRole(${user.id})">Назначить роль</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Функция для экранирования HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Редактирование пользователя
+    async function editUser(userId) {
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/?id=${userId}`);
+            const data = await response.json();
+            const user = data.users.find(u => u.id === userId);
+
+            if (user) {
+                currentUserId = userId;
+                document.getElementById('edit-login').value = user.login;
+                document.getElementById('edit-fullname').value = user.fullname;
+                clearErrors('edit');
+                openModal('edit-modal');
+            }
+        } catch (error) {
+            alert('Ошибка загрузки данных пользователя');
+        }
+    }
+
+    async function saveEdit() {
+        const login = document.getElementById('edit-login').value.trim();
+        const fullname = document.getElementById('edit-fullname').value.trim();
+
+        // Валидация
+        let isValid = true;
+        clearErrors('edit');
 
         if (!/^[A-Za-z0-9]+$/.test(login)) {
-            alert('⚠️ Логин должен содержать только латинские буквы и цифры');
-            return;
+            showError('edit-login-error', 'Логин должен содержать только латинские буквы и цифры');
+            isValid = false;
         }
+
         if (!/^[А-Яа-я\s]+$/.test(fullname)) {
-            alert('⚠️ ФИО должно содержать только русские буквы');
-            return;
+            showError('edit-fullname-error', 'ФИО должно содержать только русские буквы');
+            isValid = false;
         }
 
-        const user = users.find(u => u.id === currentUserId);
-        if (user) {
-            user.login = login;
-            user.fullname = fullname;
-            renderUsersTable();
-            closeModal('edit-modal');
-            alert('✅ Пользователь успешно обновлен');
-        }
-    }
+        if (!isValid) return;
 
-    function deleteUser(userId) {
-        if (confirm('🗑️ Вы уверены, что хотите удалить этого пользователя?\nДанные останутся в истории.')) {
-            users = users.filter(u => u.id !== userId);
-            renderUsersTable();
-            alert('✅ Пользователь успешно удален');
-        }
-    }
-
-    function changePassword(userId) {
-        currentUserId = userId;
-        document.getElementById('new-password').value = '';
-        document.getElementById('confirm-password').value = '';
-        openModal('password-modal');
-    }
-
-    function savePassword() {
-        const newPass = document.getElementById('new-password').value;
-        const confirmPass = document.getElementById('confirm-password').value;
-
-        if (!/^[A-Za-z0-9!@#$%^&*]+$/.test(newPass)) {
-            alert('⚠️ Пароль должен содержать только латинские буквы, цифры и символы !@#$%^&*');
-            return;
-        }
-        if (newPass !== confirmPass) {
-            alert('⚠️ Пароли не совпадают');
-            return;
-        }
-        if (newPass.length < 6) {
-            alert('⚠️ Пароль должен содержать минимум 6 символов');
-            return;
-        }
-
-        alert(`✅ Пароль для пользователя ${users.find(u => u.id === currentUserId)?.login} успешно изменен`);
-        closeModal('password-modal');
-    }
-
-    function assignRoles(userId) {
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            currentUserId = userId;
-            const checkboxes = document.querySelectorAll('#roles-checkboxes input');
-            checkboxes.forEach(cb => {
-                cb.checked = user.roles.includes(cb.value);
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/${currentUserId}/edit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ login, fullname })
             });
-            openModal('roles-modal');
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('✅ Пользователь успешно обновлен');
+                closeModal('edit-modal');
+                loadUsers();
+            } else {
+                alert(data.error || 'Ошибка при обновлении');
+            }
+        } catch (error) {
+            alert('Ошибка при сохранении');
         }
     }
 
-    function saveRoles() {
-        const user = users.find(u => u.id === currentUserId);
-        if (user) {
-            const selectedRoles = Array.from(document.querySelectorAll('#roles-checkboxes input:checked')).map(cb => cb.value);
-            const currentAdmin = users.find(u => u.roles.includes('admin') && u.id === 1);
-            if (currentAdmin && currentAdmin.id === 1) {
-                user.roles = selectedRoles;
-                renderUsersTable();
-                closeModal('roles-modal');
-                alert('✅ Роли успешно назначены');
-            } else {
-                alert('⚠️ Только администратор может назначать роли');
+    // Удаление пользователя
+    async function deleteUser(userId) {
+        if (confirm('🗑️ Вы уверены, что хотите удалить этого пользователя?\nДанные останутся в истории.')) {
+            try {
+                const response = await fetch(`/myttk_streaming/api/users/${userId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Пользователь успешно удален');
+                    loadUsers();
+                } else {
+                    alert(data.error || 'Ошибка при удалении');
+                }
+            } catch (error) {
+                alert('Ошибка при удалении');
             }
         }
     }
 
+    // Смена пароля
+    function changePassword(userId) {
+        currentUserId = userId;
+        document.getElementById('old-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        clearErrors('password');
+        openModal('password-modal');
+    }
+
+    async function savePassword() {
+        const oldPassword = document.getElementById('old-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+
+        // Валидация
+        let isValid = true;
+        clearErrors('password');
+
+        if (!oldPassword) {
+            showError('old-password-error', 'Введите старый пароль');
+            isValid = false;
+        }
+
+        if (newPassword.length < 6) {
+            showError('new-password-error', 'Пароль должен содержать минимум 6 символов');
+            isValid = false;
+        }
+
+        if (newPassword !== confirmPassword) {
+            showError('confirm-password-error', 'Пароли не совпадают');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/${currentUserId}/change-password/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    old_password: oldPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('✅ Пароль успешно изменен');
+                closeModal('password-modal');
+            } else {
+                alert(data.error || 'Ошибка при смене пароля');
+            }
+        } catch (error) {
+            alert('Ошибка при смене пароля');
+        }
+    }
+
+    // Назначение роли
+    async function assignRole(userId) {
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/?id=${userId}`);
+            const data = await response.json();
+            const user = data.users.find(u => u.id === userId);
+
+            if (user) {
+                currentUserId = userId;
+                document.getElementById('role-select').value = user.role;
+                openModal('role-modal');
+            }
+        } catch (error) {
+            alert('Ошибка загрузки данных пользователя');
+        }
+    }
+
+    async function saveRole() {
+        const role = document.getElementById('role-select').value;
+
+        try {
+            const response = await fetch(`/myttk_streaming/api/users/${currentUserId}/assign-role/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ role: role })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('✅ Роль успешно назначена');
+                closeModal('role-modal');
+                loadUsers();
+            } else {
+                alert(data.error || 'Ошибка при назначении роли');
+            }
+        } catch (error) {
+            alert('Ошибка при сохранении роли');
+        }
+    }
+
+    // Вспомогательные функции
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    function showError(elementId, message) {
+        const errorElement = document.getElementById(elementId);
+        if (errorElement) {
+            errorElement.textContent = message;
+        }
+    }
+
+    function clearErrors(context) {
+        const errorElements = document.querySelectorAll(`#${context}-modal .error-message`);
+        errorElements.forEach(el => el.textContent = '');
+    }
+
+    // Закрытие модального окна при клике вне его
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+
+    // Обработчики событий
     document.getElementById('apply-filters').addEventListener('click', () => {
-        renderUsersTable();
+        loadUsers();
     });
 
     document.getElementById('reset-filters').addEventListener('click', () => {
@@ -530,9 +854,10 @@
         document.getElementById('filter-fio').value = '';
         document.getElementById('filter-role').value = '';
         document.getElementById('filter-date').value = '';
-        renderUsersTable();
+        loadUsers();
     });
 
-    renderUsersTable();
+    // Загрузка данных при загрузке страницы
+    loadUsers();
 </script>
 {% endblock %}
