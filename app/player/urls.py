@@ -47,5 +47,11 @@ urlpatterns = [
     # Сообщения
     path('api/messages/', views.get_messages, name='get_messages'),
     path('api/messages/<int:message_id>/status/', views.update_message_status, name='update_message_status'),
+
+    # API для видеотрансляции
     path('api/broadcast/video-start/', views.start_video_broadcast, name='start_video_broadcast'),
+    path('api/broadcast/video-stop/', views.stop_video_broadcast, name='stop_video_broadcast'),
+    path('api/broadcast/current-status/', views.get_current_broadcast_status, name='get_current_broadcast_status'),
+    path('api/broadcast/all/', views.get_all_active_broadcasts, name='get_all_active_broadcasts'),
+    path('api/hosts/', views.get_hosts, name='get_hosts'),
 ]
