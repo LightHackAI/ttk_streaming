@@ -833,3 +833,148 @@ def start_video_broadcast(request):
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+    
+@login_required
+@user_passes_test(is_leader_or_admin)
+@require_http_methods(["POST"])
+@csrf_exempt
+def start_video_broadcast(request):
+    """
+    Запуск видеотрансляции ведущим
+    """
+    try:
+        data = json.loads(request.body)
+        playlist_id = data.get('playlist_id')
+        stream_title = data.get('title', f'Трансляция {request.user.username}')
+        
+        # Останавливаем предыдущие активные трансляции
+        Broadcast.objects.filter(user=request.user, is_active=True).update(is_active=False, ended_at=timezone.now())
+        
+        playlist = None
+        if playlist_id:
+            playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+        
+        broadcast = Broadcast.objects.create(
+            user=request.user,
+            playlist=playlist,
+            is_active=True,
+            volume=data.get('volume', 70)
+        )
+        
+        if playlist:
+            playlist.is_playing = True
+            playlist.is_active = True
+            playlist.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Видеотрансляция запущена',
+            'broadcast_id': broadcast.id,
+            'stream_url': f'/ws/broadcast/{broadcast.id}/'
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+@user_passes_test(is_leader_or_admin)
+@require_http_methods(["POST"])
+@csrf_exempt
+def stop_video_broadcast(request):
+    """
+    Остановка видеотрансляции ведущим
+    """
+    try:
+        broadcast = get_object_or_404(Broadcast, user=request.user, is_active=True)
+        broadcast.is_active = False
+        broadcast.ended_at = timezone.now()
+        broadcast.save()
+        
+        if broadcast.playlist:
+            broadcast.playlist.is_playing = False
+            broadcast.playlist.is_active = False
+            broadcast.playlist.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Видеотрансляция остановлена'
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@require_http_methods(["GET"])
+def get_current_broadcast_status(request):
+    """
+    Получение статуса текущей активной трансляции для зрителя
+    """
+    broadcast = Broadcast.objects.filter(is_active=True).select_related('user', 'playlist').first()
+    
+    if broadcast:
+        return JsonResponse({
+            'is_active': True,
+            'broadcast_id': broadcast.id,
+            'host_id': broadcast.user.id,
+            'host_name': broadcast.user.get_full_name() or broadcast.user.username,
+            'host_avatar': broadcast.user.username[0].upper(),
+            'stream_title': broadcast.playlist.name if broadcast.playlist else 'Прямой эфир',
+            'started_at': broadcast.started_at.strftime('%Y-%m-%d %H:%M'),
+            'viewer_count': 0,  # TODO: Подсчет зрителей через WebSocket
+            'stream_type': 'video'  # По умолчанию видео
+        })
+    
+    return JsonResponse({'is_active': False})
+
+
+@require_http_methods(["GET"])
+def get_all_active_broadcasts(request):
+    """
+    Получение списка всех активных трансляций
+    """
+    broadcasts = Broadcast.objects.filter(is_active=True).select_related('user', 'playlist').order_by('-started_at')
+    
+    broadcasts_data = []
+    for b in broadcasts:
+        broadcasts_data.append({
+            'id': b.id,
+            'host_id': b.user.id,
+            'host_name': b.user.get_full_name() or b.user.username,
+            'host_avatar': b.user.username[0].upper(),
+            'title': b.playlist.name if b.playlist else 'Прямой эфир',
+            'stream_type': 'video',
+            'started_at': b.started_at.strftime('%Y-%m-%d %H:%M')
+        })
+    
+    return JsonResponse({'broadcasts': broadcasts_data})
+
+@require_http_methods(["GET"])
+def get_hosts(request):
+    """Получение списка всех ведущих (пользователей с ролью leader или admin)"""
+    from accounts.models import User
+    
+    hosts = User.objects.filter(
+        role__in=['leader', 'admin'],
+        is_deleted=False
+    ).order_by('username')
+    
+    hosts_data = []
+    for host in hosts:
+        # Проверяем, есть ли у ведущего активная трансляция
+        has_active_broadcast = Broadcast.objects.filter(
+            user=host, 
+            is_active=True
+        ).exists()
+        
+        hosts_data.append({
+            'id': host.id,
+            'username': host.username,
+            'full_name': host.full_name or host.username,
+            'avatar': host.username[0].upper(),
+            'is_live': has_active_broadcast,
+            'stream_type': 'video'  # Пока всегда видео
+        })
+    
+    return JsonResponse({'hosts': hosts_data})
+
+def test_ws_page(request):
+    return render(request, 'player/test_ws.html')
