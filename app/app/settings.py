@@ -29,7 +29,6 @@ ALLOWED_HOSTS = []
 
 # Настройки аутентификации
 AUTH_USER_MODEL = 'accounts.User'
-LOGIN_URL = 'login'
 
 
 # Application definition
