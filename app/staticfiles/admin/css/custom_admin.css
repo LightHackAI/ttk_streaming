@@ -1,0 +1,234 @@
+/* static/admin/css/custom_admin.css */
+
+/* Кастомный логотип в стиле вашего шаблона */
+.navbar-brand {
+    position: relative;
+    padding: 0;
+}
+
+.navbar-brand::before {
+    content: '';
+    display: inline-block;
+    width: 80px;
+    height: 29px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 104 29' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M89 0H104L91 14L104 29H89L76 14L89 0Z' fill='currentColor'%3E%3C/path%3E%3Crect x='66' width='13' height='29' fill='currentColor'%3E%3C/rect%3E%3Crect x='42' width='13' height='29' fill='currentColor'%3E%3C/rect%3E%3Crect x='33' width='31' height='12' fill='currentColor'%3E%3C/rect%3E%3Crect x='9' width='13' height='29' fill='currentColor'%3E%3C/rect%3E%3Crect width='31' height='12' fill='currentColor'%3E%3C/rect%3E%3C/svg%3E") no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 104 29' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M89 0H104L91 14L104 29H89L76 14L89 0Z' fill='currentColor'%3E%3C/path%3E%3Crect x='66' width='13' height='29' fill='currentColor'%3E%3C/rect%3E%3Crect x='42' width='13' height='29' fill='currentColor'%3E%3C/rect%3E%3Crect x='33' width='31' height='12' fill='currentColor'%3E%3C/rect%3E%3Crect x='9' width='13' height='29' fill='currentColor'%3E%3C/rect%3E%3Crect width='31' height='12' fill='currentColor'%3E%3C/rect%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask-size: contain;
+}
+
+/* Основные цвета в стиле вашего шаблона */
+:root {
+    --primary: #df3b3b;
+    --secondary: #c92a2a;
+    --accent: #df3b3b;
+}
+
+/* Переопределение цветов Jazzmin */
+.bg-danger,
+.navbar-danger,
+.sidebar-dark-danger {
+    background: linear-gradient(135deg, #df3b3b 0%, #c92a2a 100%) !important;
+}
+
+.btn-danger {
+    background: #df3b3b;
+    border-color: #df3b3b;
+}
+
+.btn-danger:hover {
+    background: #c92a2a;
+    border-color: #c92a2a;
+}
+
+/* Стили для карточек */
+.card {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* Стили для таблиц */
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    color: #1e293b;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr:hover {
+    background: #fef2f2;
+}
+
+/* Стили для кнопок действий */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: #df3b3b;
+    border-color: #df3b3b;
+}
+
+.btn-primary:hover {
+    background: #c92a2a;
+    border-color: #c92a2a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(223, 59, 59, 0.2);
+}
+
+/* Стили для модальных окон */
+.modal-content {
+    border-radius: 18px;
+    border: none;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #df3b3b 0%, #c92a2a 100%);
+    color: white;
+    border-radius: 18px 18px 0 0;
+    padding: 1.5rem;
+}
+
+.modal-header .close {
+    color: white;
+    opacity: 0.8;
+}
+
+.modal-header .close:hover {
+    opacity: 1;
+}
+
+/* Стили для форм */
+.form-control:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #df3b3b;
+    box-shadow: 0 0 0 3px rgba(223, 59, 59, 0.1);
+}
+
+/* Стили для боковой панели */
+.sidebar .nav-sidebar > .nav-item > .nav-link.active {
+    background: linear-gradient(135deg, #df3b3b 0%, #c92a2a 100%);
+    color: white;
+}
+
+.sidebar .nav-sidebar > .nav-item > .nav-link:hover {
+    background: rgba(223, 59, 59, 0.1);
+}
+
+/* Аватар пользователя */
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #df3b3b, #c92a2a);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.card {
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show .modal-dialog {
+    animation: slideInUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1rem;
+    }
+
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+
+    .table-responsive {
+        border-radius: 12px;
+    }
+}
+
+/* Стили для дашборда */
+.info-box {
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.info-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.info-box-icon {
+    border-radius: 12px 0 0 12px;
+}
+
+.info-box-content {
+    padding: 1rem;
+}
+
+/* Кастомный скроллбар */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #df3b3b;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c92a2a;
+}

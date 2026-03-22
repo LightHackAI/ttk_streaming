@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
@@ -75,7 +77,7 @@ def edit_user(request, user_id):
 
         fullname = data.get('fullname', '').strip()
         if fullname:
-            if not all(c.isalpha() or c.isspace() for c in fullname):
+            if not re.match(r'^[А-Яа-яЁё\s]+$', fullname):
                 return JsonResponse({'error': 'ФИО должно содержать только русские буквы'}, status=400)
             user.full_name = fullname
 

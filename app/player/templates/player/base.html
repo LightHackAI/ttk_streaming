@@ -490,6 +490,7 @@
                 <!-- Центральная часть с навигацией -->
                 <div class="navbar-center">
                     <div class="nav-modules">
+                        {% if not request.user.role == 'user' %}
                         {% if request.user.is_admin %}
                         <a href="{% url 'player:admin_panel' %}" class="module-link {% if request.resolver_match.url_name == 'admin_panel' %}active{% endif %}">
                             <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -510,6 +511,7 @@
                             </svg>
                             <span>Раздел ведущего</span>
                         </a>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -521,9 +523,13 @@
                             <div class="user-details">
                                 <div class="user-name" id="userName">{{ user.get_full_name|default:user.username }}</div>
                                 <div class="user-role" id="userRole">
-                                    {% if user.is_superuser %}Администратор
-                                    {% elif user.groups.all %}Ведущий
-                                    {% else %}Пользователь{% endif %}
+                                    {% if request.user.role == 'admin' %}
+                                        Администратор
+                                    {% elif request.user.role == 'leader' %}
+                                        Ведущий
+                                    {% else %}
+                                        Пользователь
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -574,7 +580,7 @@
                     <input type="text" id="profileUsername" value="{{ user.username }}" readonly disabled>
                 </div>
                 <div class="form-group">
-                    <label>Полное имя</label>
+                    <label>ФИО</label>
                     <input type="text" id="profileFullname" value="{{ user.get_full_name|default:'Не указано' }}" readonly disabled>
                 </div>
                 <div class="form-group">
@@ -583,7 +589,7 @@
                 </div>
                 <div class="form-group">
                     <label>Роль</label>
-                    <input type="text" id="profileRole" value="{% if user.is_superuser %}Администратор{% elif user.groups.all %}Ведущий{% else %}Пользователь{% endif %}" readonly disabled>
+                    <input type="text" id="profileRole" value="{% if request.user.role == 'admin' %}Администратор{% elif request.user.role == 'leader' %}Ведущий{% else %}Пользователь{% endif %}" readonly disabled>
                 </div>
                 <div class="form-group">
                     <label>Дата регистрации</label>

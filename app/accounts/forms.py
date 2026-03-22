@@ -56,7 +56,7 @@ class RegistrationForm(forms.ModelForm):
         )
         self.fields['full_name'].validators.append(
             RegexValidator(
-                regex=r'^[А-Яа-я\s]+$',
+                regex=r'^[А-Яа-яЁё\s]+$',
                 message='ФИО должно содержать только русские буквы'
             )
         )

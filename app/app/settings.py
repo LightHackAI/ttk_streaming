@@ -35,6 +35,7 @@ LOGIN_URL = 'login'
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -82,8 +83,12 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'myttk_streaming',
+        'USER': 'ttkadmin',
+        'PASSWORD': '12345',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -128,9 +133,66 @@ LOGOUT_REDIRECT_URL = 'accounts:login'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATICFILES_DIRS = []
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Админ-панель",
+    "site_header": "Система управления потоковым вещанием",
+    "site_brand": "Админ-панель",
+    "site_logo": "logo.png",
+    "login_logo": "logo.png",
+    "welcome_sign": "Добро пожаловать",
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "custom_css": "admin/css/custom_admin.css",
+    "custom_js": "admin/js/custom_admin.js",
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
+    "related_modal_active": True,
+
+    "icons": {
+        "auth": "fas fa-shield-alt",
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+    },
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-white",
+    "accent": "accent-danger",
+    "navbar": "navbar-white navbar-light",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-light-white",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": True,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": True,
+    "theme": "default",
+    "default_theme_mode": "light",
+    "theme_mode_switcher": True,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
+}
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -733,7 +733,7 @@
             isValid = false;
         }
 
-        if (!/^[А-Яа-я\s]+$/.test(fullname)) {
+        if (!/^[А-Яа-яЁё\s]+$/.test(fullname)) {
             showError('edit-fullname-error', 'ФИО должно содержать только русские буквы');
             isValid = false;
         }
