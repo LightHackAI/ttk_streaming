@@ -1,3 +1,4 @@
+# player/models.py
 from django.db import models
 from django.conf import settings
 from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
@@ -73,6 +74,9 @@ class Broadcast(models.Model):
     is_active = models.BooleanField(default=False, verbose_name='Активна')
     volume = models.PositiveIntegerField(default=70, validators=[MaxValueValidator(100), MinValueValidator(0)],
                                          verbose_name='Громкость')
+    mic_enabled = models.BooleanField(default=False, verbose_name='Микрофон включен')
+    cam_enabled = models.BooleanField(default=False, verbose_name='Камера включена')
+    has_video = models.BooleanField(default=False, verbose_name='Есть видео')
     started_at = models.DateTimeField(auto_now_add=True, verbose_name='Начало трансляции')
     ended_at = models.DateTimeField(null=True, blank=True, verbose_name='Окончание трансляции')
 

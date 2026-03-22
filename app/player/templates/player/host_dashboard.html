@@ -822,7 +822,7 @@ let audioChunks = [];
 let currentPlaylistId = null;
 let showArchived = false;
 let localStream = null;
-let isWebcamOn = false;
+let isCamOn = false;
 let isMicOn = false;
 let isBroadcastActive = false;
 let currentRecordingBlob = null;
@@ -836,6 +836,20 @@ let selectedRecordingsIds = new Set();
 let recordingTimerInterval = null;
 let recordingSeconds = 0;
 let mediaStreamRecord = null;
+
+// WebRTC переменные
+let wsBroadcast = null;
+let peerConnections = new Map(); // listenerId -> peerConnection
+
+const config = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
+    ]
+};
 
 // ========== Вспомогательные функции ==========
 function escapeHtml(text) {
@@ -886,6 +900,7 @@ function showNotification(message, type = 'success') {
         font-weight: 500;
         min-width: 250px;
         max-width: 350px;
+        z-index: 10000;
     `;
     notification.textContent = message;
     container.appendChild(notification);
@@ -1677,6 +1692,198 @@ async function savePlaylistOrder() {
     }
 }
 
+// ========== WebRTC функции ==========
+
+// Подключение к WebSocket для трансляции
+function connectBroadcastWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/broadcast/`;
+    console.log('Connecting to broadcast WebSocket:', wsUrl);
+
+    wsBroadcast = new WebSocket(wsUrl);
+
+    wsBroadcast.onopen = () => {
+        console.log('Broadcast WebSocket connected');
+        showNotification('WebSocket подключен', 'success');
+    };
+
+    wsBroadcast.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Broadcast WebSocket message:', data);
+            handleBroadcastMessage(data);
+        } catch (e) {
+            console.error('Error parsing message:', e);
+        }
+    };
+
+    wsBroadcast.onerror = (error) => {
+        console.error('Broadcast WebSocket error:', error);
+        showNotification('Ошибка WebSocket соединения', 'error');
+    };
+
+    wsBroadcast.onclose = () => {
+        console.log('Broadcast WebSocket disconnected, reconnecting in 3s...');
+        if (isBroadcastActive) {
+            setTimeout(connectBroadcastWebSocket, 3000);
+        }
+    };
+}
+
+// Обработка сообщений от WebSocket
+function handleBroadcastMessage(data) {
+    switch (data.type) {
+        case 'broadcast_started':
+            console.log('Broadcast started confirmation received');
+            showNotification('Трансляция запущена', 'success');
+            break;
+        case 'listener_joined':
+            console.log('Listener joined:', data.listener_id);
+            handleListenerJoined(data.listener_id);
+            break;
+        case 'listener_left':
+            console.log('Listener left:', data.listener_id);
+            handleListenerLeft(data.listener_id);
+            break;
+        case 'webrtc_answer':
+            console.log('WebRTC answer received from listener:', data.listener_id);
+            handleWebRTCAnswer(data.listener_id, data.answer);
+            break;
+        case 'ice_candidate':
+            console.log('ICE candidate received from listener:', data.listener_id);
+            handleICECandidate(data.listener_id, data.candidate);
+            break;
+        case 'new_message':
+            console.log('New message:', data);
+            showNotification(`${data.username}: ${data.content}`, 'info');
+            if (typeof loadMessages === 'function') {
+                loadMessages();
+            }
+            break;
+    }
+}
+
+// Обработка подключения слушателя
+async function handleListenerJoined(listenerId) {
+    console.log('Creating peer connection for listener:', listenerId);
+
+    if (!localStream || localStream.getTracks().length === 0) {
+        console.log('No local stream available, waiting for media...');
+        showNotification('Сначала включите камеру или микрофон', 'warning');
+        return;
+    }
+
+    // Создаем PeerConnection для слушателя
+    const pc = new RTCPeerConnection(config);
+
+    // Добавляем все треки из локального потока
+    localStream.getTracks().forEach(track => {
+        console.log('Adding track to peer connection:', track.kind, track.enabled);
+        pc.addTrack(track, localStream);
+    });
+
+    pc.onicecandidate = (event) => {
+        if (event.candidate && wsBroadcast && wsBroadcast.readyState === WebSocket.OPEN) {
+            console.log('Sending ICE candidate for listener:', listenerId);
+            wsBroadcast.send(JSON.stringify({
+                action: 'webrtc_ice_candidate',
+                candidate: event.candidate,
+                target: 'listener',
+                listener_id: listenerId
+            }));
+        }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+        console.log(`ICE connection state for listener ${listenerId}:`, pc.iceConnectionState);
+    };
+
+    pc.onconnectionstatechange = () => {
+        console.log(`Connection state for listener ${listenerId}:`, pc.connectionState);
+        if (pc.connectionState === 'connected') {
+            console.log('WebRTC connection established with listener:', listenerId);
+            showNotification('Слушатель подключился', 'success');
+        } else if (pc.connectionState === 'failed') {
+            console.error('WebRTC connection failed for listener:', listenerId);
+            showNotification('Ошибка подключения слушателя', 'error');
+        }
+    };
+
+    pc.ontrack = (event) => {
+        console.log('Track added to peer connection:', event.track.kind);
+    };
+
+    try {
+        // Создаем offer
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        console.log('Sending WebRTC offer to listener:', listenerId);
+
+        // Отправляем offer слушателю через WebSocket
+        if (wsBroadcast && wsBroadcast.readyState === WebSocket.OPEN) {
+            wsBroadcast.send(JSON.stringify({
+                action: 'webrtc_offer',
+                offer: pc.localDescription,
+                target: 'listener',
+                listener_id: listenerId
+            }));
+        } else {
+            console.error('WebSocket not open for sending offer');
+            showNotification('Ошибка: WebSocket не подключен', 'error');
+        }
+
+        peerConnections.set(listenerId, pc);
+        console.log('Peer connection stored for listener:', listenerId);
+
+    } catch (error) {
+        console.error('Error creating offer:', error);
+        showNotification('Ошибка подключения слушателя', 'error');
+    }
+}
+
+// Обработка ответа WebRTC
+async function handleWebRTCAnswer(listenerId, answer) {
+    console.log('Handling WebRTC answer for listener:', listenerId);
+    const pc = peerConnections.get(listenerId);
+    if (pc && !pc.remoteDescription) {
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            console.log('Remote description set successfully');
+        } catch (error) {
+            console.error('Error setting remote description:', error);
+        }
+    } else {
+        console.log('No peer connection or remote description already set for listener:', listenerId);
+    }
+}
+
+// Обработка ICE candidate
+async function handleICECandidate(listenerId, candidate) {
+    console.log('Handling ICE candidate for listener:', listenerId);
+    const pc = peerConnections.get(listenerId);
+    if (pc) {
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log('ICE candidate added successfully');
+        } catch (error) {
+            console.error('Error adding ICE candidate:', error);
+        }
+    }
+}
+
+// Обработка отключения слушателя
+function handleListenerLeft(listenerId) {
+    console.log('Listener left:', listenerId);
+    const pc = peerConnections.get(listenerId);
+    if (pc) {
+        pc.close();
+        peerConnections.delete(listenerId);
+        console.log('Peer connection closed for listener:', listenerId);
+    }
+    showNotification(`Слушатель покинул трансляцию`, 'info');
+}
+
 // ========== Управление эфиром ==========
 async function toggleBroadcast() {
     const btn = document.getElementById('broadcastBtn');
@@ -1685,12 +1892,16 @@ async function toggleBroadcast() {
 
     if (!isBroadcastActive) {
         try {
+            const playlistId = document.getElementById('broadcastPlaylistSelect').value;
+            const volume = document.getElementById('broadcastVolume').value;
+
             const response = await fetch('{% url "player:start_broadcast" %}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
-                body: JSON.stringify({ playlist_id: null, volume: 50 })
+                body: JSON.stringify({ playlist_id: playlistId || null, volume: parseInt(volume) })
             });
             const data = await response.json();
+
             if (data.success) {
                 isBroadcastActive = true;
                 btn.textContent = 'Остановить эфир';
@@ -1698,111 +1909,252 @@ async function toggleBroadcast() {
                 controls.style.display = 'block';
                 statusBadge.textContent = 'Эфир активен';
                 statusBadge.classList.add('active');
-                loadBroadcastPlaylists();
+
+                // Подключаем WebSocket
+                connectBroadcastWebSocket();
+
+                showNotification('Трансляция запущена', 'success');
             } else {
-                alert(data.error);
+                showNotification(data.error || 'Ошибка запуска эфира', 'error');
             }
         } catch (error) {
             console.error('Ошибка запуска эфира:', error);
-            alert('Ошибка при запуске эфира');
+            showNotification('Ошибка при запуске эфира', 'error');
         }
     } else {
         try {
-            await fetch('{% url "player:stop_broadcast" %}', { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' } });
+            await fetch('{% url "player:stop_broadcast" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+
             isBroadcastActive = false;
             btn.textContent = 'Начать эфир';
             btn.classList.remove('stop');
             controls.style.display = 'none';
             statusBadge.textContent = 'Эфир неактивен';
             statusBadge.classList.remove('active');
-            if (isWebcamOn) toggleCam();
-            if (isMicOn) toggleMic();
+
+            // Закрываем WebSocket
+            if (wsBroadcast) {
+                wsBroadcast.close();
+                wsBroadcast = null;
+            }
+
+            // Закрываем все PeerConnections
+            for (const [listenerId, pc] of peerConnections) {
+                pc.close();
+            }
+            peerConnections.clear();
+
+            // Останавливаем локальный поток
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            isMicOn = false;
+            isCamOn = false;
+
+            const micToggle = document.getElementById('micToggle');
+            const camToggle = document.getElementById('camToggle');
+            if (micToggle) micToggle.classList.remove('active');
+            if (camToggle) camToggle.classList.remove('active');
+
+            const previewContainer = document.getElementById('webcamPreviewContainer');
+            if (previewContainer) previewContainer.style.display = 'none';
+
+            const localVideo = document.getElementById('localVideo');
+            if (localVideo) localVideo.srcObject = null;
+
+            showNotification('Трансляция остановлена', 'info');
         } catch (error) {
             console.error('Ошибка остановки эфира:', error);
+            showNotification('Ошибка при остановке эфира', 'error');
         }
     }
 }
 
-function toggleMic() {
+// Включение/выключение микрофона
+async function toggleMic() {
     if (!isBroadcastActive) {
-        alert('Сначала начните эфир');
+        showNotification('Сначала начните эфир', 'error');
         return;
     }
+
     const toggle = document.getElementById('micToggle');
-    isMicOn = !isMicOn;
-    if (isMicOn) {
-        toggle.classList.add('active');
-        showNotification('Микрофон включен', 'info');
+
+    if (!isMicOn) {
+        try {
+            // Получаем доступ к микрофону
+            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            if (!localStream) {
+                localStream = audioStream;
+            } else {
+                // Добавляем аудио треки к существующему потоку
+                audioStream.getAudioTracks().forEach(track => {
+                    localStream.addTrack(track);
+                });
+            }
+
+            isMicOn = true;
+            toggle.classList.add('active');
+            showNotification('Микрофон включен', 'success');
+
+            // Обновляем статус в БД
+            await fetch('{% url "player:start_video_broadcast" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ enabled: true })
+            });
+
+            // Уведомляем существующих слушателей о новых треках
+            if (peerConnections.size > 0) {
+                for (const [listenerId, pc] of peerConnections) {
+                    const senders = pc.getSenders();
+                    const hasAudio = senders.some(s => s.track && s.track.kind === 'audio');
+
+                    if (!hasAudio && localStream) {
+                        localStream.getAudioTracks().forEach(track => {
+                            pc.addTrack(track, localStream);
+                        });
+                    }
+
+                    // Пересоздаем offer для обновления треков
+                    if (pc.signalingState === 'stable') {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        if (wsBroadcast && wsBroadcast.readyState === WebSocket.OPEN) {
+                            wsBroadcast.send(JSON.stringify({
+                                action: 'webrtc_offer',
+                                offer: pc.localDescription,
+                                target: 'listener',
+                                listener_id: listenerId
+                            }));
+                        }
+                    }
+                }
+            }
+
+        } catch (err) {
+            console.error('Ошибка доступа к микрофону:', err);
+            let errorMessage = 'Не удалось получить доступ к микрофону';
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера';
+            }
+            showNotification(errorMessage, 'error');
+        }
     } else {
+        // Выключаем микрофон
+        if (localStream) {
+            const audioTracks = localStream.getAudioTracks();
+            audioTracks.forEach(track => {
+                track.enabled = false;
+            });
+        }
+
+        isMicOn = false;
         toggle.classList.remove('active');
         showNotification('Микрофон выключен', 'info');
     }
 }
 
+// Включение/выключение камеры
 async function toggleCam() {
     if (!isBroadcastActive) {
         showNotification('Сначала начните эфир', 'error');
         return;
     }
+
     const toggle = document.getElementById('camToggle');
     const previewContainer = document.getElementById('webcamPreviewContainer');
     const localVideo = document.getElementById('localVideo');
 
-    if (!isWebcamOn) {
+    if (!isCamOn) {
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({
+            // Получаем доступ к камере
+            const videoStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: { ideal: 1280 }, height: { ideal: 720 } },
                 audio: false
             });
+
+            if (!localStream) {
+                localStream = videoStream;
+            } else {
+                // Добавляем видео треки к существующему потоку
+                videoStream.getVideoTracks().forEach(track => {
+                    localStream.addTrack(track);
+                });
+            }
+
             localVideo.style.transform = 'scaleX(-1)';
             localVideo.srcObject = localStream;
             await localVideo.play();
             previewContainer.style.display = 'block';
             toggle.classList.add('active');
-            isWebcamOn = true;
+            isCamOn = true;
             showNotification('Камера включена', 'success');
+
+            // Обновляем статус в БД
+            await fetch('{% url "player:start_video_broadcast" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ enabled: true })
+            });
+
+            // Уведомляем существующих слушателей о новых треках
+            if (peerConnections.size > 0) {
+                for (const [listenerId, pc] of peerConnections) {
+                    const senders = pc.getSenders();
+                    const hasVideo = senders.some(s => s.track && s.track.kind === 'video');
+
+                    if (!hasVideo && localStream) {
+                        localStream.getVideoTracks().forEach(track => {
+                            pc.addTrack(track, localStream);
+                        });
+                    }
+
+                    // Пересоздаем offer для обновления треков
+                    if (pc.signalingState === 'stable') {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        if (wsBroadcast && wsBroadcast.readyState === WebSocket.OPEN) {
+                            wsBroadcast.send(JSON.stringify({
+                                action: 'webrtc_offer',
+                                offer: pc.localDescription,
+                                target: 'listener',
+                                listener_id: listenerId
+                            }));
+                        }
+                    }
+                }
+            }
+
         } catch (err) {
             console.error('Ошибка доступа к камере:', err);
             let errorMessage = 'Не удалось получить доступ к камере';
-            if (err.name === 'NotAllowedError') errorMessage = 'Доступ к камере запрещен. Разрешите доступ в настройках браузера';
-            else if (err.name === 'NotFoundError') errorMessage = 'Камера не найдена. Проверьте подключение веб-камеры';
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Доступ к камере запрещен. Разрешите доступ в настройках браузера';
+            } else if (err.name === 'NotFoundError') {
+                errorMessage = 'Камера не найдена. Проверьте подключение веб-камеры';
+            }
             showNotification(errorMessage, 'error');
         }
     } else {
+        // Выключаем камеру
         if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-            localVideo.srcObject = null;
-            localVideo.style.transform = '';
+            const videoTracks = localStream.getVideoTracks();
+            videoTracks.forEach(track => {
+                track.enabled = false;
+            });
         }
+
         previewContainer.style.display = 'none';
         toggle.classList.remove('active');
-        isWebcamOn = false;
+        isCamOn = false;
         showNotification('Камера выключена', 'info');
     }
-}
-
-async function loadBroadcastPlaylists() {
-    try {
-        const response = await fetch('{% url "player:get_playlists" %}');
-        const data = await response.json();
-        const select = document.getElementById('broadcastPlaylistSelect');
-        select.innerHTML = '<option value="">Без фоновой музыки</option>';
-        data.playlists.forEach(playlist => {
-            const option = document.createElement('option');
-            option.value = playlist.id;
-            option.textContent = playlist.name;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Ошибка загрузки плейлистов для эфира:', error);
-    }
-}
-
-function toggleFullscreen() {
-    const video = document.getElementById('localVideo');
-    if (video.requestFullscreen) video.requestFullscreen();
-    else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
-    else if (video.msRequestFullscreen) video.msRequestFullscreen();
 }
 
 // ========== Загрузка сообщений ==========
@@ -1892,6 +2244,23 @@ async function toggleLoop() {
     }
 }
 
+async function loadBroadcastPlaylists() {
+    try {
+        const response = await fetch('{% url "player:get_playlists" %}');
+        const data = await response.json();
+        const select = document.getElementById('broadcastPlaylistSelect');
+        select.innerHTML = '<option value="">Без фоновой музыки</option>';
+        data.playlists.forEach(playlist => {
+            const option = document.createElement('option');
+            option.value = playlist.id;
+            option.textContent = playlist.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки плейлистов для эфира:', error);
+    }
+}
+
 async function uploadMedia(input) {
     if (isUploading) {
         showNotification('Загрузка уже выполняется', 'info');
@@ -1964,7 +2333,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('broadcastBtn').onclick = toggleBroadcast;
     document.getElementById('micToggle').onclick = toggleMic;
     document.getElementById('camToggle').onclick = toggleCam;
-    document.getElementById('fullscreenBtn')?.addEventListener('click', toggleFullscreen);
+
+    const fullscreenBtn = document.querySelector('.fullscreen-btn-small');
+    if (fullscreenBtn) fullscreenBtn.onclick = () => {
+        const video = document.getElementById('localVideo');
+        if (video && video.requestFullscreen) video.requestFullscreen();
+    };
+
     document.getElementById('uploadMediaBtn').onclick = () => document.getElementById('fileInput').click();
     document.getElementById('fileInput').onchange = (e) => uploadMedia(e.target);
     document.getElementById('startRecordBtn').onclick = startRecording;
@@ -1974,7 +2349,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loopBtn').onclick = toggleLoop;
     document.getElementById('archivedToggle').onclick = toggleArchived;
 
-    document.querySelector('.fullscreen-btn-small')?.addEventListener('click', toggleFullscreen);
     document.getElementById('broadcastVolume')?.addEventListener('input', (e) => {
         console.log(`Громкость эфира: ${e.target.value}%`);
     });

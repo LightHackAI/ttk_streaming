@@ -1,7 +1,8 @@
-from django.urls import re_path
+# player/routing.py
+from django.urls import path
 from . import consumers
 
 websocket_urlpatterns = [
-    re_path(r'ws/broadcast/$', consumers.BroadcastConsumer.as_asgi()),
-    re_path(r'ws/stream/$', consumers.StreamConsumer.as_asgi()),
+    path('ws/broadcast/', consumers.BroadcastConsumer.as_asgi()),
+    path('ws/stream/', consumers.StreamConsumer.as_asgi()),
 ]

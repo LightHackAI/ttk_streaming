@@ -1,3 +1,4 @@
+# player/views.py
 import re
 
 from django.contrib.auth.decorators import login_required
@@ -551,7 +552,9 @@ def start_broadcast(request):
             user=request.user,
             playlist=playlist,
             is_active=True,
-            volume=data.get('volume', 70)
+            volume=data.get('volume', 70),
+            mic_enabled=False,
+            cam_enabled=False
         )
 
         if playlist:
@@ -601,6 +604,8 @@ def get_broadcast_status(request):
             'broadcast_id': broadcast.id,
             'playlist_id': broadcast.playlist.id if broadcast.playlist else None,
             'volume': broadcast.volume,
+            'mic_enabled': broadcast.mic_enabled,
+            'cam_enabled': broadcast.cam_enabled,
             'started_at': broadcast.started_at.strftime('%Y-%m-%d %H:%M')
         })
 
@@ -757,8 +762,6 @@ def update_message_status(request, message_id):
         return JsonResponse({'error': str(e)}, status=400)
 
 
-# Добавить в конец файла player/views.py:
-
 @login_required
 @user_passes_test(is_leader_or_admin)
 @require_http_methods(["PUT"])
@@ -813,32 +816,15 @@ def start_video_broadcast(request):
     try:
         data = json.loads(request.body)
 
-        # Здесь будет логика запуска видеотрансляции
-        # Пока просто сохраняем статус
+        # Обновляем статус камеры в трансляции
+        broadcast = Broadcast.objects.filter(user=request.user, is_active=True).first()
+        if broadcast:
+            broadcast.cam_enabled = data.get('enabled', True)
+            broadcast.save()
 
         return JsonResponse({
             'success': True,
             'message': 'Видеотрансляция запущена'
-        })
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
-
-
-@login_required
-@user_passes_test(is_leader_or_admin)
-@require_http_methods(["POST"])
-@csrf_exempt
-def start_video_broadcast(request):
-    try:
-        data = json.loads(request.body)
-
-        # TODO: Здесь будет интеграция с плеером для запуска видеотрансляции
-        # Пока просто заглушка
-        print(f"Запуск видеотрансляции с параметрами: {data}")
-
-        return JsonResponse({
-            'success': True,
-            'message': 'Видеотрансляция запущена (заглушка)'
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
@@ -899,3 +885,27 @@ def delete_recording(request, recording_id):
         return JsonResponse({'success': True, 'message': 'Запись удалена'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_active_broadcasts(request):
+    """API для получения списка активных трансляций"""
+    from .models import Broadcast
+
+    broadcasts = Broadcast.objects.filter(is_active=True).select_related('user')
+
+    broadcasts_data = []
+    for broadcast in broadcasts:
+        broadcasts_data.append({
+            'user_id': broadcast.user.id,
+            'username': broadcast.user.username,
+            'user_avatar': broadcast.user.username[0].upper(),
+            'role': broadcast.user.role,
+            'broadcast_type': 'video' if broadcast.cam_enabled else 'audio',
+            'mic_enabled': broadcast.mic_enabled,
+            'cam_enabled': broadcast.cam_enabled,
+            'started_at': broadcast.started_at.strftime('%Y-%m-%d %H:%M')
+        })
+
+    return JsonResponse({'broadcasts': broadcasts_data})

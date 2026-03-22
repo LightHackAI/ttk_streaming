@@ -72,65 +72,13 @@
         color: #df3b3b;
     }
 
-    /* Выбор жанра */
-    .genre-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .genre-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-    }
-
-    .genre-item:hover {
-        background: #fef2f2;
-        border-color: #df3b3b;
-    }
-
-    .genre-item.active {
-        background: #df3b3b;
-        border-color: #df3b3b;
-        color: white;
-    }
-
-    .genre-item.active .genre-name {
-        color: white;
-    }
-
-    .genre-icon {
-        font-size: 20px;
-    }
-
-    .genre-name {
-        flex: 1;
-        font-size: 14px;
-        font-weight: 500;
-        color: #1e293b;
-    }
-
-    .genre-count {
-        font-size: 12px;
-        color: #64748b;
-    }
-
-    .genre-item.active .genre-count {
-        color: rgba(255, 255, 255, 0.8);
-    }
-
     /* Список ведущих */
     .host-list {
         display: flex;
         flex-direction: column;
         gap: 12px;
+        max-height: 500px;
+        overflow-y: auto;
     }
 
     .host-card {
@@ -154,6 +102,16 @@
         background: linear-gradient(135deg, #fef2f2 0%, #fff 100%);
         border-color: #df3b3b;
         box-shadow: 0 2px 8px rgba(223, 59, 59, 0.1);
+    }
+
+    .host-card.offline {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .host-card.offline:hover {
+        transform: none;
+        background: #f8fafc;
     }
 
     .host-avatar {
@@ -223,33 +181,6 @@
         color: #0284c7;
     }
 
-    /* Кнопка "Мой поток" */
-    .my-stream-btn {
-        width: 100%;
-        padding: 14px;
-        background: linear-gradient(135deg, #df3b3b, #c92a2a);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-
-    .my-stream-btn:hover {
-        box-shadow: 0 5px 15px rgba(223, 59, 59, 0.3);
-    }
-
-    .my-stream-btn.active {
-        background: linear-gradient(135deg, #10b981, #059669);
-    }
-
     /* Правая панель - плеер */
     .player-area {
         background: white;
@@ -276,6 +207,13 @@
         height: 100%;
         display: none;
         object-fit: contain;
+        background: #000;
+    }
+
+    #remoteVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
         background: #000;
     }
 
@@ -339,11 +277,6 @@
         color: #0284c7;
     }
 
-    .stream-badge.personal {
-        background: #dcfce7;
-        color: #16a34a;
-    }
-
     .current-stream-desc {
         font-size: 14px;
         color: #64748b;
@@ -377,8 +310,8 @@
     }
 
     .control-btn {
-        width: 28px;
-        height: 28px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         border: none;
         background: #df3b3b;
@@ -390,9 +323,14 @@
         justify-content: center;
     }
 
-    .control-btn:hover {
+    .control-btn:hover:not(:disabled) {
         background: #c92a2a;
         transform: scale(1.05);
+    }
+
+    .control-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .volume-control {
@@ -653,6 +591,27 @@
             flex-direction: column;
         }
     }
+
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #df3b3b;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .no-broadcasts {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+    }
 </style>
 {% endblock %}
 
@@ -666,74 +625,7 @@
     <div class="two-columns">
         <!-- Левая панель - выбор контента -->
         <div class="sidebar">
-            <!-- Кнопка "Мой поток" -->
-            <div class="sidebar-section">
-                <button class="my-stream-btn" id="myStreamBtn">
-                    <svg width="20" height="20" viewBox="0 0 22 22" fill="currentColor" style="margin-bottom: 5px;">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                    Мой поток
-                </button>
-                <div style="font-size: 12px; color: #64748b; text-align: center;">
-                    Персональная подборка треков по вашему вкусу
-                </div>
-            </div>
-
-            <!-- Выбор жанра -->
-            <div class="sidebar-section">
-                <div class="sidebar-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18V5l12-2v13"/>
-                        <circle cx="6" cy="18" r="3"/>
-                        <circle cx="18" cy="16" r="3"/>
-                    </svg>
-                    Музыкальные жанры
-                </div>
-                <div class="genre-list" id="genreList">
-                    <div class="genre-item" data-genre="all">
-                        <span class="genre-icon">🎵</span>
-                        <span class="genre-name">Все жанры</span>
-                        <span class="genre-count">1250</span>
-                    </div>
-                    <div class="genre-item" data-genre="rock">
-                        <span class="genre-icon">🎸</span>
-                        <span class="genre-name">Рок</span>
-                        <span class="genre-count">342</span>
-                    </div>
-                    <div class="genre-item" data-genre="pop">
-                        <span class="genre-icon">🎤</span>
-                        <span class="genre-name">Поп</span>
-                        <span class="genre-count">456</span>
-                    </div>
-                    <div class="genre-item" data-genre="electronic">
-                        <span class="genre-icon">🎧</span>
-                        <span class="genre-name">Электронная</span>
-                        <span class="genre-count">278</span>
-                    </div>
-                    <div class="genre-item" data-genre="jazz">
-                        <span class="genre-icon">🎷</span>
-                        <span class="genre-name">Джаз</span>
-                        <span class="genre-count">156</span>
-                    </div>
-                    <div class="genre-item" data-genre="classical">
-                        <span class="genre-icon">🎻</span>
-                        <span class="genre-name">Классика</span>
-                        <span class="genre-count">98</span>
-                    </div>
-                    <div class="genre-item" data-genre="hiphop">
-                        <span class="genre-icon">🎙️</span>
-                        <span class="genre-name">Хип-Хоп</span>
-                        <span class="genre-count">212</span>
-                    </div>
-                    <div class="genre-item" data-genre="folk">
-                        <span class="genre-icon">🪕</span>
-                        <span class="genre-name">Фолк</span>
-                        <span class="genre-count">87</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Список ведущих -->
+            <!-- Список ведущих в эфире -->
             <div class="sidebar-section">
                 <div class="sidebar-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -743,61 +635,7 @@
                     Ведущие в эфире
                 </div>
                 <div class="host-list" id="hostList">
-                    <div class="host-card" data-host-id="1" data-host-type="video">
-                        <div class="host-avatar">А</div>
-                        <div class="host-info">
-                            <div class="host-name">Алексей Музыкальный</div>
-                            <div class="host-status">
-                                <span class="status-badge live"></span>
-                                <span class="status-text">В эфире</span>
-                                <span class="host-type video">Видео</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="host-card" data-host-id="2" data-host-type="audio">
-                        <div class="host-avatar">М</div>
-                        <div class="host-info">
-                            <div class="host-name">Мария Ведущая</div>
-                            <div class="host-status">
-                                <span class="status-badge live"></span>
-                                <span class="status-text">В эфире</span>
-                                <span class="host-type audio">Аудио</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="host-card" data-host-id="3" data-host-type="video">
-                        <div class="host-avatar">Д</div>
-                        <div class="host-info">
-                            <div class="host-name">Дмитрий DJ</div>
-                            <div class="host-status">
-                                <span class="status-badge live"></span>
-                                <span class="status-text">В эфире</span>
-                                <span class="host-type video">Видео</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="host-card" data-host-id="4" data-host-type="audio">
-                        <div class="host-avatar">Е</div>
-                        <div class="host-info">
-                            <div class="host-name">Елена Классика</div>
-                            <div class="host-status">
-                                <span class="status-badge offline"></span>
-                                <span class="status-text">Не в эфире</span>
-                                <span class="host-type audio">Аудио</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="host-card" data-host-id="5" data-host-type="video">
-                        <div class="host-avatar">Р</div>
-                        <div class="host-info">
-                            <div class="host-name">Роман Рокер</div>
-                            <div class="host-status">
-                                <span class="status-badge live"></span>
-                                <span class="status-text">В эфире</span>
-                                <span class="host-type video">Видео</span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="no-broadcasts">Загрузка...</div>
                 </div>
             </div>
         </div>
@@ -808,12 +646,12 @@
             <div class="player-area">
                 <div class="media-container">
                     <audio id="audioPlayer" controls style="display: none;"></audio>
-                    <video id="videoPlayer" controls style="display: none;"></video>
+                    <video id="remoteVideo" autoplay playsinline style="display: none;"></video>
                     <div id="mediaPlaceholder" class="media-placeholder">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M3 12h3l3-9 3 18 3-9h3"/>
                         </svg>
-                        <p>Выберите жанр, ведущего или нажмите "Мой поток"</p>
+                        <p>Выберите ведущего для прослушивания</p>
                     </div>
                 </div>
 
@@ -823,14 +661,14 @@
                         <span>Не выбрано</span>
                     </div>
                     <div class="current-stream-desc" id="currentStreamDesc">
-                        <span>Выберите источник для воспроизведения</span>
+                        <span>Выберите ведущего для воспроизведения</span>
                     </div>
                 </div>
 
                 <!-- Элементы управления плеером -->
                 <div class="player-controls">
                     <button class="control-btn" id="playPauseBtn" disabled>
-                        <svg viewBox="0 0 24 24" fill="currentColor">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
                             <path d="M8 5v14l11-7z"/>
                         </svg>
                     </button>
@@ -864,8 +702,9 @@
                         rows="1"
                         placeholder="Напишите сообщение ведущему..."
                         maxlength="500"
+                        disabled
                     ></textarea>
-                    <button class="send-btn" id="sendMessageBtn">
+                    <button class="send-btn" id="sendMessageBtn" disabled>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -875,7 +714,7 @@
                 </div>
 
                 <div class="voice-controls">
-                    <button class="voice-btn" id="recordVoiceBtn">
+                    <button class="voice-btn" id="recordVoiceBtn" disabled>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -910,7 +749,7 @@
 <script>
     // DOM элементы
     const audioPlayer = document.getElementById('audioPlayer');
-    const videoPlayer = document.getElementById('videoPlayer');
+    const remoteVideo = document.getElementById('remoteVideo');
     const mediaPlaceholder = document.getElementById('mediaPlaceholder');
     const playPauseBtn = document.getElementById('playPauseBtn');
     const volumeSlider = document.getElementById('volumeSlider');
@@ -924,21 +763,29 @@
     const recordingTimer = document.getElementById('recordingTimer');
     const recordBtnText = document.getElementById('recordBtnText');
     const voiceStatus = document.getElementById('voiceStatus');
-    const myStreamBtn = document.getElementById('myStreamBtn');
     const currentStreamTitle = document.getElementById('currentStreamTitle');
     const currentStreamDesc = document.getElementById('currentStreamDesc');
+    const hostList = document.getElementById('hostList');
 
     // Состояние
     let isPlaying = false;
-    let currentStreamType = null; // 'myStream', 'host', 'genre'
-    let currentHostId = null;
-    let currentGenre = 'all';
-    let isMyStreamActive = false;
+    let currentBroadcaster = null;
+    let wsStream = null;
+    let peerConnection = null;
+    let localStreamForVoice = null;
     let mediaRecorder = null;
     let audioChunks = [];
     let recordingStartTime = null;
     let recordingInterval = null;
     let recordedBlob = null;
+
+    // Конфигурация WebRTC
+    const config = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+    };
 
     // Функция показа уведомлений
     function showNotification(message, type = 'success', title = '') {
@@ -986,12 +833,11 @@
 
     // Обновление времени
     function updateTime() {
-        if (audioPlayer.src && audioPlayer.style.display !== 'none') {
+        if (audioPlayer.src && audioPlayer.style.display !== 'none' && !isNaN(audioPlayer.currentTime)) {
             currentTimeSpan.textContent = formatTime(audioPlayer.currentTime);
-            durationSpan.textContent = formatTime(audioPlayer.duration);
-        } else if (videoPlayer.src && videoPlayer.style.display !== 'none') {
-            currentTimeSpan.textContent = formatTime(videoPlayer.currentTime);
-            durationSpan.textContent = formatTime(videoPlayer.duration);
+            if (!isNaN(audioPlayer.duration)) {
+                durationSpan.textContent = formatTime(audioPlayer.duration);
+            }
         }
     }
 
@@ -1003,12 +849,6 @@
             } else {
                 audioPlayer.play();
             }
-        } else if (videoPlayer.style.display !== 'none' && videoPlayer.src) {
-            if (isPlaying) {
-                videoPlayer.pause();
-            } else {
-                videoPlayer.play();
-            }
         }
     }
 
@@ -1016,191 +856,372 @@
     function setVolume(value) {
         const volume = value / 100;
         if (audioPlayer) audioPlayer.volume = volume;
-        if (videoPlayer) videoPlayer.volume = volume;
+        if (remoteVideo) remoteVideo.volume = volume;
     }
 
     // Обновление иконки кнопки воспроизведения
     function updatePlayPauseIcon() {
         if (isPlaying) {
             playPauseBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="currentColor">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
                     <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
                 </svg>
             `;
         } else {
             playPauseBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="currentColor">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
                     <path d="M8 5v14l11-7z"/>
                 </svg>
             `;
         }
     }
 
-    // Включение "Моего потока"
-    function activateMyStream() {
-        isMyStreamActive = true;
-        currentStreamType = 'myStream';
-        currentHostId = null;
+    // Подключение к WebSocket для получения трансляций
+    function connectStreamWebSocket() {
+        // Используйте правильный путь с префиксом
+        const wsUrl = `ws://${window.location.host}/ws/stream/`;
+        console.log('Connecting to WebSocket:', wsUrl);
+        wsStream = new WebSocket(wsUrl);
 
-        // Обновляем UI
-        myStreamBtn.classList.add('active');
+        wsStream.onopen = () => {
+            console.log('WebSocket connected for stream');
+            loadActiveBroadcasts();
+        };
 
-        // Снимаем активность с жанров и ведущих
-        document.querySelectorAll('.genre-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        document.querySelectorAll('.host-card').forEach(host => {
-            host.classList.remove('active');
-        });
+        wsStream.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('WebSocket message:', data);
+            handleStreamMessage(data);
+        };
 
-        // Обновляем информацию о потоке
-        const selectedGenre = document.querySelector('.genre-item.active');
-        const genreName = selectedGenre ? selectedGenre.querySelector('.genre-name').textContent : 'все жанры';
-        currentStreamTitle.innerHTML = `
-            <span>🎵 Мой поток</span>
-            <span class="stream-badge personal">Персональная подборка</span>
-        `;
-        currentStreamDesc.innerHTML = `
-            <span>🎧 Треки подобраны специально для вас</span>
-            <span class="stream-meta">
-                <span class="listener-count">👥 Слушают: 156</span>
-            </span>
-        `;
+        wsStream.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
 
-        // Здесь будет логика запуска персонального потока
-        showNotification(`Включен "Мой поток". Подборка треков по вашим предпочтениям`, 'success', '🎵 Мой поток');
-
-        // Активируем элементы управления
-        playPauseBtn.disabled = false;
-        volumeSlider.disabled = false;
-
-        // Показываем заглушку для демонстрации
-        mediaPlaceholder.style.display = 'flex';
-        audioPlayer.style.display = 'none';
-        videoPlayer.style.display = 'none';
-        mediaPlaceholder.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="22"/>
-            </svg>
-            <p>🎵 Персональный плейлист готов к воспроизведению</p>
-            <p style="font-size: 12px;">Нажмите ▶ для начала прослушивания</p>
-        `;
+        wsStream.onclose = () => {
+            console.log('WebSocket disconnected, reconnecting...');
+            setTimeout(connectStreamWebSocket, 3000);
+        };
     }
 
-    // Выбор жанра
-    function selectGenre(genreElement) {
-        // Снимаем активность со всех жанров
-        document.querySelectorAll('.genre-item').forEach(item => {
-            item.classList.remove('active');
+    // Обработка сообщений от WebSocket
+    function handleStreamMessage(data) {
+        switch (data.type) {
+            case 'active_broadcasts':
+                updateBroadcastList(data.broadcasts);
+                break;
+            case 'broadcast_status':
+                if (data.action === 'started') {
+                    addBroadcastToList(data);
+                } else if (data.action === 'stopped') {
+                    removeBroadcastFromList(data.user_id);
+                    if (currentBroadcaster === data.user_id) {
+                        disconnectFromStream();
+                    }
+                }
+                break;
+            case 'webrtc_offer':
+                handleWebRTCOffer(data);
+                break;
+            case 'mic_status':
+                if (currentBroadcaster === data.user_id) {
+                    showNotification(data.enabled ? 'Микрофон ведущего включен' : 'Микрофон ведущего выключен', 'info');
+                }
+                break;
+            case 'cam_status':
+                if (currentBroadcaster === data.user_id) {
+                    if (!data.enabled && remoteVideo.style.display !== 'none') {
+                        remoteVideo.style.display = 'none';
+                        mediaPlaceholder.style.display = 'flex';
+                        mediaPlaceholder.innerHTML = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M3 12h3l3-9 3 18 3-9h3"/>
+                            </svg>
+                            <p>Ведущий выключил камеру</p>
+                        `;
+                    }
+                }
+                break;
+            case 'playlist_item':
+                if (currentBroadcaster === data.user_id && data.media_file.media_type === 'video') {
+                    // Видео из плейлиста перекрывает камеру
+                    remoteVideo.style.display = 'none';
+                    mediaPlaceholder.style.display = 'flex';
+                    mediaPlaceholder.innerHTML = `
+                        <video id="playlistVideo" controls autoplay style="width:100%; height:100%; object-fit:contain;">
+                            <source src="${data.media_file.file_url}" type="video/mp4">
+                        </video>
+                        <div style="position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.7); padding:8px 16px; border-radius:8px;">
+                            ${escapeHtml(data.media_file.title)}
+                        </div>
+                    `;
+                    const playlistVideo = document.getElementById('playlistVideo');
+                    if (playlistVideo) {
+                        playlistVideo.onended = () => {
+                            remoteVideo.style.display = 'block';
+                            mediaPlaceholder.style.display = 'none';
+                        };
+                    }
+                }
+                break;
+            case 'new_message':
+                if (currentBroadcaster === data.user_id) {
+                    showNotification(`${data.username}: ${data.content}`, 'info', 'Новое сообщение');
+                }
+                break;
+        }
+    }
+
+    // Загрузка активных трансляций
+    async function loadActiveBroadcasts() {
+        try {
+            const response = await fetch('/myttk_streaming/api/broadcasts/active/');
+            const data = await response.json();
+            updateBroadcastList(data.broadcasts);
+        } catch (error) {
+            console.error('Error loading broadcasts:', error);
+            // Если ошибка, показываем заглушку
+            if (hostList) {
+                hostList.innerHTML = '<div class="no-broadcasts">Нет активных трансляций</div>';
+            }
+        }
+    }
+
+    // Обновление списка ведущих
+    function updateBroadcastList(broadcasts) {
+        if (!hostList) return;
+
+        if (!broadcasts || broadcasts.length === 0) {
+            hostList.innerHTML = '<div class="no-broadcasts">Нет активных трансляций</div>';
+            return;
+        }
+
+        hostList.innerHTML = '';
+        broadcasts.forEach(broadcast => {
+            const hostCard = document.createElement('div');
+            hostCard.className = `host-card ${broadcast.cam_enabled ? 'video' : 'audio'}`;
+            hostCard.setAttribute('data-user-id', broadcast.user_id);
+            hostCard.innerHTML = `
+                <div class="host-avatar">${escapeHtml(broadcast.user_avatar)}</div>
+                <div class="host-info">
+                    <div class="host-name">${escapeHtml(broadcast.username)}</div>
+                    <div class="host-status">
+                        <span class="status-badge live"></span>
+                        <span class="status-text">В эфире</span>
+                        <span class="host-type ${broadcast.broadcast_type}">${broadcast.broadcast_type === 'video' ? 'Видео' : 'Аудио'}</span>
+                    </div>
+                </div>
+            `;
+            hostCard.onclick = () => joinStream(broadcast.user_id, broadcast.username, broadcast.broadcast_type);
+            hostList.appendChild(hostCard);
         });
-        genreElement.classList.add('active');
+    }
 
-        currentGenre = genreElement.dataset.genre;
-        currentStreamType = 'genre';
-        currentHostId = null;
-        isMyStreamActive = false;
+    // Добавление ведущего в список
+    function addBroadcastToList(broadcast) {
+        const existingCard = hostList.querySelector(`.host-card[data-user-id="${broadcast.user_id}"]`);
+        if (existingCard) return;
 
-        // Снимаем активность с "Моего потока" и ведущих
-        myStreamBtn.classList.remove('active');
-        document.querySelectorAll('.host-card').forEach(host => {
-            host.classList.remove('active');
+        const hostCard = document.createElement('div');
+        hostCard.className = `host-card ${broadcast.broadcast_type}`;
+        hostCard.setAttribute('data-user-id', broadcast.user_id);
+        hostCard.innerHTML = `
+            <div class="host-avatar">${escapeHtml(broadcast.user_avatar)}</div>
+            <div class="host-info">
+                <div class="host-name">${escapeHtml(broadcast.username)}</div>
+                <div class="host-status">
+                    <span class="status-badge live"></span>
+                    <span class="status-text">В эфире</span>
+                    <span class="host-type ${broadcast.broadcast_type}">${broadcast.broadcast_type === 'video' ? 'Видео' : 'Аудио'}</span>
+                </div>
+            </div>
+        `;
+        hostCard.onclick = () => joinStream(broadcast.user_id, broadcast.username, broadcast.broadcast_type);
+
+        const noBroadcasts = hostList.querySelector('.no-broadcasts');
+        if (noBroadcasts) {
+            hostList.innerHTML = '';
+        }
+        hostList.appendChild(hostCard);
+    }
+
+    // Удаление ведущего из списка
+    function removeBroadcastFromList(userId) {
+        const card = hostList.querySelector(`.host-card[data-user-id="${userId}"]`);
+        if (card) {
+            card.remove();
+        }
+        if (hostList.children.length === 0) {
+            hostList.innerHTML = '<div class="no-broadcasts">Нет активных трансляций</div>';
+        }
+    }
+
+    // Присоединение к трансляции
+    async function joinStream(userId, username, broadcastType) {
+        if (currentBroadcaster === userId) return;
+
+        // Отключаемся от предыдущей трансляции
+        if (currentBroadcaster) {
+            disconnectFromStream();
+        }
+
+        currentBroadcaster = userId;
+
+        // Обновляем UI
+        document.querySelectorAll('.host-card').forEach(card => {
+            card.classList.remove('active');
         });
+        const selectedCard = hostList.querySelector(`.host-card[data-user-id="${userId}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('active');
+        }
 
-        const genreName = genreElement.querySelector('.genre-name').textContent;
         currentStreamTitle.innerHTML = `
-            <span>🎵 Жанр: ${genreName}</span>
-            <span class="stream-badge audio">Аудиопоток</span>
+            <span>🎥 ${escapeHtml(username)}</span>
+            <span class="stream-badge ${broadcastType}">${broadcastType === 'video' ? 'Видеотрансляция' : 'Аудиотрансляция'}</span>
         `;
         currentStreamDesc.innerHTML = `
-            <span>🎧 Случайные треки в жанре "${genreName}"</span>
+            <span>🎬 Подключение к трансляции...</span>
             <span class="stream-meta">
-                <span class="listener-count">👥 Слушают: ${Math.floor(Math.random() * 500) + 100}</span>
+                <span class="listener-count">👥 Подключение...</span>
             </span>
         `;
 
-        // Здесь будет логика запуска потока по жанру
-        showNotification(`Выбран жанр: ${genreName}. Включаем случайные треки`, 'info', '🎵 Жанр выбран');
-
-        // Активируем элементы управления
+        // Включаем элементы управления
         playPauseBtn.disabled = false;
         volumeSlider.disabled = false;
+        messageText.disabled = false;
+        sendMessageBtn.disabled = false;
+        recordVoiceBtn.disabled = false;
 
         // Показываем заглушку
         mediaPlaceholder.style.display = 'flex';
         audioPlayer.style.display = 'none';
-        videoPlayer.style.display = 'none';
+        remoteVideo.style.display = 'none';
+        mediaPlaceholder.innerHTML = `
+            <div class="loading"></div>
+            <p>Подключение к трансляции ${escapeHtml(username)}...</p>
+        `;
+
+        // Создаем WebRTC подключение
+        await createPeerConnection();
+
+        // Отправляем запрос на подключение
+        if (wsStream && wsStream.readyState === WebSocket.OPEN) {
+            wsStream.send(JSON.stringify({
+                action: 'join_stream',
+                user_id: userId
+            }));
+        }
+
+        showNotification(`Подключение к трансляции ${username}`, 'info', 'Подключение');
+    }
+
+    // Отключение от трансляции
+    function disconnectFromStream() {
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+
+        if (wsStream && wsStream.readyState === WebSocket.OPEN && currentBroadcaster) {
+            wsStream.send(JSON.stringify({
+                action: 'leave_stream'
+            }));
+        }
+
+        currentBroadcaster = null;
+
+        // Сбрасываем UI
+        audioPlayer.style.display = 'none';
+        remoteVideo.style.display = 'none';
+        mediaPlaceholder.style.display = 'flex';
         mediaPlaceholder.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M3 12h3l3-9 3 18 3-9h3"/>
             </svg>
-            <p>🎵 Подборка треков в жанре "${genreName}"</p>
-            <p style="font-size: 12px;">Нажмите ▶ для начала прослушивания</p>
+            <p>Выберите ведущего для прослушивания</p>
         `;
+
+        currentStreamTitle.innerHTML = '<span>Не выбрано</span>';
+        currentStreamDesc.innerHTML = '<span>Выберите ведущего для воспроизведения</span>';
+
+        playPauseBtn.disabled = true;
+        volumeSlider.disabled = true;
+        messageText.disabled = true;
+        sendMessageBtn.disabled = true;
+        recordVoiceBtn.disabled = true;
     }
 
-    // Выбор ведущего
-    function selectHost(hostElement) {
-        const hostId = hostElement.dataset.hostId;
-        const hostType = hostElement.dataset.hostType;
-        const isLive = hostElement.querySelector('.status-badge').classList.contains('live');
+    // Создание WebRTC соединения
+    async function createPeerConnection() {
+        peerConnection = new RTCPeerConnection(config);
 
-        if (!isLive) {
-            showNotification('Этот ведущий сейчас не в эфире', 'error');
-            return;
-        }
+        peerConnection.ontrack = (event) => {
+            console.log('Received track:', event.track.kind);
+            if (event.track.kind === 'video') {
+                remoteVideo.style.display = 'block';
+                mediaPlaceholder.style.display = 'none';
+                remoteVideo.srcObject = event.streams[0];
+            } else if (event.track.kind === 'audio') {
+                audioPlayer.style.display = 'none';
+                if (remoteVideo.srcObject) {
+                    // Если есть видео, добавляем аудио к нему
+                    const stream = remoteVideo.srcObject;
+                    stream.addTrack(event.track);
+                } else {
+                    // Только аудио
+                    audioPlayer.style.display = 'block';
+                    const audioStream = new MediaStream([event.track]);
+                    audioPlayer.srcObject = audioStream;
+                    mediaPlaceholder.style.display = 'none';
+                }
+            }
+        };
 
-        // Снимаем активность со всех ведущих
-        document.querySelectorAll('.host-card').forEach(host => {
-            host.classList.remove('active');
-        });
-        hostElement.classList.add('active');
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate && wsStream && wsStream.readyState === WebSocket.OPEN && currentBroadcaster) {
+                wsStream.send(JSON.stringify({
+                    action: 'ice_candidate',
+                    candidate: event.candidate,
+                    broadcaster_id: currentBroadcaster
+                }));
+            }
+        };
 
-        currentHostId = hostId;
-        currentStreamType = 'host';
-        isMyStreamActive = false;
+        peerConnection.onconnectionstatechange = () => {
+            console.log('Connection state:', peerConnection.connectionState);
+            if (peerConnection.connectionState === 'connected') {
+                currentStreamDesc.innerHTML = `
+                    <span>🎬 Трансляция активна</span>
+                    <span class="stream-meta">
+                        <span class="listener-count">👥 Слушаем...</span>
+                    </span>
+                `;
+            } else if (peerConnection.connectionState === 'disconnected') {
+                showNotification('Соединение потеряно', 'error');
+            }
+        };
+    }
 
-        // Снимаем активность с "Моего потока" и жанров
-        myStreamBtn.classList.remove('active');
-        document.querySelectorAll('.genre-item').forEach(item => {
-            item.classList.remove('active');
-        });
+    // Обработка WebRTC offer
+    async function handleWebRTCOffer(data) {
+        if (!peerConnection || currentBroadcaster !== data.user_id) return;
 
-        const hostName = hostElement.querySelector('.host-name').textContent;
-        const streamType = hostType === 'video' ? 'Видеотрансляция' : 'Аудиотрансляция';
-        const streamBadgeClass = hostType === 'video' ? 'video' : 'audio';
+        try {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
 
-        currentStreamTitle.innerHTML = `
-            <span>🎥 ${hostName}</span>
-            <span class="stream-badge ${streamBadgeClass}">${streamType}</span>
-        `;
-        currentStreamDesc.innerHTML = `
-            <span>🎬 ${streamType} ведущего ${hostName}</span>
-            <span class="stream-meta">
-                <span class="listener-count">👥 Зрителей: ${Math.floor(Math.random() * 1000) + 50}</span>
-            </span>
-        `;
-
-        // Здесь будет логика подключения к потоку ведущего
-        showNotification(`Подключаемся к трансляции ведущего ${hostName}`, 'info', '📡 Подключение');
-
-        // Активируем элементы управления
-        playPauseBtn.disabled = false;
-        volumeSlider.disabled = false;
-
-        // В зависимости от типа потока показываем соответствующий плеер
-        mediaPlaceholder.style.display = 'none';
-        if (hostType === 'video') {
-            audioPlayer.style.display = 'none';
-            videoPlayer.style.display = 'block';
-            videoPlayer.src = ''; // Здесь будет URL видеопотока
-            showNotification(`Видеотрансляция "${hostName}" готова к просмотру`, 'success');
-        } else {
-            audioPlayer.style.display = 'block';
-            videoPlayer.style.display = 'none';
-            audioPlayer.src = ''; // Здесь будет URL аудиопотока
-            showNotification(`Аудиотрансляция "${hostName}" готова к прослушиванию`, 'success');
+            if (wsStream && wsStream.readyState === WebSocket.OPEN) {
+                wsStream.send(JSON.stringify({
+                    action: 'webrtc_answer',
+                    answer: answer,
+                    broadcaster_id: currentBroadcaster
+                }));
+            }
+        } catch (error) {
+            console.error('Error handling offer:', error);
         }
     }
 
@@ -1212,23 +1233,28 @@
             return;
         }
 
-        let recipient = '';
-        if (currentStreamType === 'host' && currentHostId) {
-            recipient = 'ведущему';
-        } else if (currentStreamType === 'myStream') {
-            recipient = 'персональный поток';
-        } else if (currentStreamType === 'genre') {
-            recipient = 'общий чат';
+        if (!currentBroadcaster) {
+            showNotification('Сначала выберите трансляцию', 'error');
+            return;
         }
 
-        showNotification(`Сообщение отправлено ${recipient}: "${message}"`, 'success');
-        messageText.value = '';
+        if (wsStream && wsStream.readyState === WebSocket.OPEN) {
+            wsStream.send(JSON.stringify({
+                action: 'send_message',
+                message: message
+            }));
+            showNotification('Сообщение отправлено ведущему', 'success');
+            messageText.value = '';
+        } else {
+            showNotification('Нет подключения к серверу', 'error');
+        }
     }
 
     // Запись голосового сообщения
     async function startRecording() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            localStreamForVoice = stream;
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
 
@@ -1239,7 +1265,10 @@
             mediaRecorder.onstop = () => {
                 recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 voiceStatus.textContent = `Голосовое сообщение записано (${(recordedBlob.size / 1024).toFixed(1)} KB)`;
-                stream.getTracks().forEach(track => track.stop());
+                if (localStreamForVoice) {
+                    localStreamForVoice.getTracks().forEach(track => track.stop());
+                    localStreamForVoice = null;
+                }
             };
 
             mediaRecorder.start();
@@ -1271,6 +1300,10 @@
             mediaRecorder.onstop = () => {
                 audioChunks = [];
                 recordedBlob = null;
+                if (localStreamForVoice) {
+                    localStreamForVoice.getTracks().forEach(track => track.stop());
+                    localStreamForVoice = null;
+                }
             };
             mediaRecorder.stop();
             clearInterval(recordingInterval);
@@ -1305,6 +1338,7 @@
 
     function sendVoiceMessage() {
         if (recordedBlob) {
+            // TODO: Отправить голосовое сообщение ведущему
             showNotification(`Голосовое сообщение отправлено (${(recordedBlob.size / 1024).toFixed(1)} KB)`, 'success');
             recordedBlob = null;
             resetRecordingUI();
@@ -1314,11 +1348,17 @@
         }
     }
 
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     // Обработчики событий
     playPauseBtn.addEventListener('click', togglePlayPause);
     volumeSlider.addEventListener('input', (e) => setVolume(e.target.value));
     sendMessageBtn.addEventListener('click', sendTextMessage);
-    myStreamBtn.addEventListener('click', activateMyStream);
 
     messageText.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -1340,16 +1380,6 @@
     cancelRecordingBtn.addEventListener('click', cancelRecording);
     sendVoiceBtn.addEventListener('click', sendVoiceMessage);
 
-    // Обработчики для жанров
-    document.querySelectorAll('.genre-item').forEach(genre => {
-        genre.addEventListener('click', () => selectGenre(genre));
-    });
-
-    // Обработчики для ведущих
-    document.querySelectorAll('.host-card').forEach(host => {
-        host.addEventListener('click', () => selectHost(host));
-    });
-
     // Обработчики плеера
     if (audioPlayer) {
         audioPlayer.addEventListener('play', () => {
@@ -1364,17 +1394,17 @@
         audioPlayer.addEventListener('loadedmetadata', updateTime);
     }
 
-    if (videoPlayer) {
-        videoPlayer.addEventListener('play', () => {
-            isPlaying = true;
-            updatePlayPauseIcon();
-        });
-        videoPlayer.addEventListener('pause', () => {
-            isPlaying = false;
-            updatePlayPauseIcon();
-        });
-        videoPlayer.addEventListener('timeupdate', updateTime);
-        videoPlayer.addEventListener('loadedmetadata', updateTime);
+    // Инициализация
+    connectStreamWebSocket();
+
+    // Обновление списка трансляций каждые 10 секунд
+    setInterval(loadActiveBroadcasts, 10000);
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 </script>
 {% endblock %}

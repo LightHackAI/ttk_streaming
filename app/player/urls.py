@@ -1,3 +1,4 @@
+# player/urls.py
 from django.urls import path
 from . import views
 
@@ -14,6 +15,9 @@ urlpatterns = [
 
     # Модуль ведущего
     path('host/', views.host_dashboard, name='host_dashboard'),
+
+    # API для активных трансляций
+    path('api/broadcasts/active/', views.get_active_broadcasts, name='get_active_broadcasts'),
 
     # Медиатека
     path('api/media-files/', views.get_media_files, name='get_media_files'),
@@ -47,7 +51,6 @@ urlpatterns = [
     # Сообщения
     path('api/messages/', views.get_messages, name='get_messages'),
     path('api/messages/<int:message_id>/status/', views.update_message_status, name='update_message_status'),
-    path('api/broadcast/video-start/', views.start_video_broadcast, name='start_video_broadcast'),
 
     path('api/playlists/<int:playlist_id>/add-recording/', views.add_recording_to_playlist,
          name='add_recording_to_playlist'),
