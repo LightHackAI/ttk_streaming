@@ -48,4 +48,8 @@ urlpatterns = [
     path('api/messages/', views.get_messages, name='get_messages'),
     path('api/messages/<int:message_id>/status/', views.update_message_status, name='update_message_status'),
     path('api/broadcast/video-start/', views.start_video_broadcast, name='start_video_broadcast'),
+
+    path('api/playlists/<int:playlist_id>/add-recording/', views.add_recording_to_playlist,
+         name='add_recording_to_playlist'),
+    path('api/recordings/<int:recording_id>/delete/', views.delete_recording, name='delete_recording'),
 ]

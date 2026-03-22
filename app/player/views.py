@@ -347,6 +347,15 @@ def upload_media(request):
 def delete_media(request, file_id):
     try:
         media_file = get_object_or_404(MediaFile, id=file_id, user=request.user)
+
+        # Физическое удаление файла
+        if media_file.file and os.path.isfile(media_file.file.path):
+            try:
+                os.remove(media_file.file.path)
+            except Exception as e:
+                print(f"Ошибка удаления файла: {e}")
+
+        # Мягкое удаление из БД
         media_file.is_deleted = True
         media_file.save()
 
@@ -831,5 +840,62 @@ def start_video_broadcast(request):
             'success': True,
             'message': 'Видеотрансляция запущена (заглушка)'
         })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+@user_passes_test(is_leader_or_admin)
+@require_http_methods(["POST"])
+@csrf_exempt
+def add_recording_to_playlist(request, playlist_id):
+    try:
+        data = json.loads(request.body)
+        recording_id = data.get('recording_id')
+
+        playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+        recording = get_object_or_404(AudioRecording, id=recording_id, user=request.user)
+
+        # Создаем медиафайл из записи
+        media_file = MediaFile.objects.create(
+            user=request.user,
+            title=recording.title,
+            file=recording.audio_file,
+            media_type='audio',
+            duration=recording.duration
+        )
+
+        # Получаем текущий максимальный порядок
+        current_max_order = playlist.items.aggregate(models.Max('order'))['order__max'] or 0
+
+        PlaylistItem.objects.create(
+            playlist=playlist,
+            media_file=media_file,
+            order=current_max_order + 1
+        )
+
+        recording.added_to_playlist = True
+        recording.save()
+
+        return JsonResponse({'success': True, 'message': 'Запись добавлена в плейлист'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+@user_passes_test(is_leader_or_admin)
+@require_http_methods(["DELETE"])
+@csrf_exempt
+def delete_recording(request, recording_id):
+    try:
+        recording = get_object_or_404(AudioRecording, id=recording_id, user=request.user)
+
+        # Удаляем файл с диска
+        if recording.audio_file and os.path.isfile(recording.audio_file.path):
+            os.remove(recording.audio_file.path)
+
+        recording.delete()
+
+        return JsonResponse({'success': True, 'message': 'Запись удалена'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
