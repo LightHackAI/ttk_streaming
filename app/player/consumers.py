@@ -384,11 +384,27 @@ class BroadcastConsumer(AsyncWebsocketConsumer):
     # Обработчики для сообщений от группы
     async def listener_joined(self, event):
         """Уведомление о присоединении слушателя"""
+        listener_id = event['listener_id']
+        listener_name = event['listener_name']
+
+        logger.info(f"Listener joined broadcast of user {self.user.id}: {listener_id} - {listener_name}")
+
         await self.send(json.dumps({
             'type': 'listener_joined',
-            'listener_id': event['listener_id'],
-            'listener_name': event['listener_name']
+            'listener_id': listener_id,
+            'listener_name': listener_name
         }))
+
+        async def update_local_stream(self, data):
+            """Обновить локальный поток (вызывается из клиента)"""
+            # Это нужно для синхронизации состояния
+            pass
+
+        # Если есть локальный поток, сразу создаем peer connection
+        if hasattr(self, 'local_stream') and self.local_stream:
+            logger.info(f"Creating peer connection for listener {listener_id}")
+            # Отправляем сообщение в WebSocket клиента для создания offer
+            # Это будет обработано в handleListenerJoined на клиенте
 
     async def listener_left(self, event):
         """Уведомление о выходе слушателя"""
@@ -419,6 +435,7 @@ class StreamConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope['user']
+        self.local_stream = None
 
         if not self.user.is_authenticated:
             await self.close()
@@ -485,15 +502,19 @@ class StreamConsumer(AsyncWebsocketConsumer):
         """Присоединиться к трансляции ведущего"""
         self.current_broadcaster = broadcaster_id
 
+        logger.info(f"User {self.user.id} joining stream of broadcaster {broadcaster_id}")
+
         # Уведомляем ведущего о новом слушателе
+        broadcast_group = f'user_{broadcaster_id}_broadcast'
         await self.channel_layer.group_send(
-            f'user_{broadcaster_id}_broadcast',
+            broadcast_group,
             {
                 'type': 'listener_joined',
                 'listener_id': self.user.id,
                 'listener_name': self.user.username
             }
         )
+        logger.info(f"Sent listener_joined to group {broadcast_group}")
 
         # Получаем информацию о трансляции
         broadcast_info = await self.get_broadcast_info(broadcaster_id)
@@ -503,6 +524,9 @@ class StreamConsumer(AsyncWebsocketConsumer):
                 'type': 'stream_info',
                 'broadcaster': broadcast_info
             }))
+            logger.info(f"Sent stream_info to user {self.user.id}")
+        else:
+            logger.warning(f"No broadcast info found for broadcaster {broadcaster_id}")
 
     async def leave_stream(self):
         """Покинуть трансляцию"""

@@ -767,6 +767,11 @@
     const currentStreamDesc = document.getElementById('currentStreamDesc');
     const hostList = document.getElementById('hostList');
 
+    console.log('=== Player Page Debug Info ===');
+    console.log('Browser:', navigator.userAgent);
+    console.log('WebRTC support:', !!window.RTCPeerConnection);
+    console.log('==============================');
+
     // Состояние
     let isPlaying = false;
     let currentBroadcaster = null;
@@ -778,12 +783,16 @@
     let recordingStartTime = null;
     let recordingInterval = null;
     let recordedBlob = null;
+    let pendingIceCandidates = []; // Для хранения ICE кандидатов
 
-    // Конфигурация WebRTC
+    // Конфигурация WebRTC с дополнительными STUN серверами
     const config = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
         ]
     };
 
@@ -876,10 +885,12 @@
         }
     }
 
+    // ========== WebRTC функции ==========
+
     // Подключение к WebSocket для получения трансляций
     function connectStreamWebSocket() {
-        // Используйте правильный путь с префиксом
-        const wsUrl = `ws://${window.location.host}/ws/stream/`;
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/stream/`;
         console.log('Connecting to WebSocket:', wsUrl);
         wsStream = new WebSocket(wsUrl);
 
@@ -889,9 +900,13 @@
         };
 
         wsStream.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('WebSocket message:', data);
-            handleStreamMessage(data);
+            try {
+                const data = JSON.parse(event.data);
+                console.log('WebSocket message received:', data.type);
+                handleStreamMessage(data);
+            } catch (error) {
+                console.error('Error parsing message:', error);
+            }
         };
 
         wsStream.onerror = (error) => {
@@ -906,11 +921,31 @@
 
     // Обработка сообщений от WebSocket
     function handleStreamMessage(data) {
+        console.log('📨 Received message type:', data.type, data);
         switch (data.type) {
             case 'active_broadcasts':
+                console.log('Active broadcasts:', data.broadcasts);
                 updateBroadcastList(data.broadcasts);
                 break;
+            case 'stream_info':
+                console.log('📡 Stream info received:', data.broadcaster);
+                // Обновляем UI с информацией о трансляции
+                if (data.broadcaster) {
+                    currentStreamDesc.innerHTML = `
+                        <span>🎬 Трансляция: ${escapeHtml(data.broadcaster.username)}</span>
+                        <span class="stream-meta">
+                            <span class="listener-count">🎥 ${data.broadcaster.broadcast_type === 'video' ? 'Видео' : 'Аудио'}</span>
+                        </span>
+                    `;
+                    // Показываем, что ждем WebRTC offer
+                    mediaPlaceholder.innerHTML = `
+                        <div class="loading"></div>
+                        <p>Ожидание видеопотока от ведущего...</p>
+                    `;
+                }
+                break;
             case 'broadcast_status':
+                console.log('Broadcast status:', data.action);
                 if (data.action === 'started') {
                     addBroadcastToList(data);
                 } else if (data.action === 'stopped') {
@@ -921,7 +956,13 @@
                 }
                 break;
             case 'webrtc_offer':
+                console.log('🎯 WebRTC offer received from broadcaster:', data.user_id);
+                console.log('Offer details:', data.offer);
                 handleWebRTCOffer(data);
+                break;
+            case 'ice_candidate':
+                console.log('🧊 ICE candidate received from broadcaster');
+                handleICECandidate(data);
                 break;
             case 'mic_status':
                 if (currentBroadcaster === data.user_id) {
@@ -942,35 +983,160 @@
                     }
                 }
                 break;
-            case 'playlist_item':
-                if (currentBroadcaster === data.user_id && data.media_file.media_type === 'video') {
-                    // Видео из плейлиста перекрывает камеру
-                    remoteVideo.style.display = 'none';
-                    mediaPlaceholder.style.display = 'flex';
-                    mediaPlaceholder.innerHTML = `
-                        <video id="playlistVideo" controls autoplay style="width:100%; height:100%; object-fit:contain;">
-                            <source src="${data.media_file.file_url}" type="video/mp4">
-                        </video>
-                        <div style="position:absolute; bottom:20px; left:20px; background:rgba(0,0,0,0.7); padding:8px 16px; border-radius:8px;">
-                            ${escapeHtml(data.media_file.title)}
-                        </div>
-                    `;
-                    const playlistVideo = document.getElementById('playlistVideo');
-                    if (playlistVideo) {
-                        playlistVideo.onended = () => {
-                            remoteVideo.style.display = 'block';
-                            mediaPlaceholder.style.display = 'none';
-                        };
-                    }
-                }
-                break;
             case 'new_message':
                 if (currentBroadcaster === data.user_id) {
                     showNotification(`${data.username}: ${data.content}`, 'info', 'Новое сообщение');
                 }
                 break;
+            default:
+                console.log('Unknown message type:', data.type);
         }
     }
+
+    // Создание WebRTC соединения
+    async function createPeerConnection() {
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+
+        peerConnection = new RTCPeerConnection(config);
+
+        peerConnection.ontrack = (event) => {
+            console.log('Received track:', event.track.kind);
+            if (event.track.kind === 'video') {
+                remoteVideo.style.display = 'block';
+                mediaPlaceholder.style.display = 'none';
+                remoteVideo.srcObject = event.streams[0];
+                console.log('Video stream set');
+            } else if (event.track.kind === 'audio') {
+                audioPlayer.style.display = 'none';
+                if (remoteVideo.srcObject) {
+                    const stream = remoteVideo.srcObject;
+                    stream.addTrack(event.track);
+                    console.log('Audio added to video stream');
+                } else {
+                    audioPlayer.style.display = 'block';
+                    const audioStream = new MediaStream([event.track]);
+                    audioPlayer.srcObject = audioStream;
+                    mediaPlaceholder.style.display = 'none';
+                    console.log('Audio stream set');
+                }
+            }
+        };
+
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate && wsStream && wsStream.readyState === WebSocket.OPEN && currentBroadcaster) {
+                console.log('Sending ICE candidate to broadcaster');
+                wsStream.send(JSON.stringify({
+                    action: 'ice_candidate',
+                    candidate: event.candidate,
+                    broadcaster_id: currentBroadcaster
+                }));
+            }
+        };
+
+        peerConnection.onconnectionstatechange = () => {
+            console.log('Connection state:', peerConnection.connectionState);
+            if (peerConnection.connectionState === 'connected') {
+                console.log('WebRTC connection established!');
+                currentStreamDesc.innerHTML = `
+                    <span>🎬 Трансляция активна</span>
+                    <span class="stream-meta">
+                        <span class="listener-count">👥 Подключено</span>
+                    </span>
+                `;
+                showNotification('Трансляция подключена', 'success');
+            } else if (peerConnection.connectionState === 'failed') {
+                console.error('WebRTC connection failed');
+                showNotification('Ошибка подключения к трансляции', 'error');
+            } else if (peerConnection.connectionState === 'disconnected') {
+                showNotification('Соединение потеряно', 'error');
+            }
+        };
+
+        // Обрабатываем накопленные ICE кандидаты
+        if (pendingIceCandidates.length > 0) {
+            console.log(`Processing ${pendingIceCandidates.length} pending ICE candidates`);
+            for (const candidate of pendingIceCandidates) {
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                    console.log('Pending ICE candidate added');
+                } catch (err) {
+                    console.error('Error adding pending ICE candidate:', err);
+                }
+            }
+            pendingIceCandidates = [];
+        }
+    }
+
+    // Обработка WebRTC offer
+    async function handleWebRTCOffer(data) {
+        console.log('Handling WebRTC offer from broadcaster:', data.user_id);
+
+        if (!peerConnection || currentBroadcaster !== data.user_id) {
+            console.log('Creating new peer connection');
+            await createPeerConnection();
+        }
+
+        if (!peerConnection) {
+            console.error('Failed to create peer connection');
+            return;
+        }
+
+        try {
+            // Устанавливаем remote description
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            console.log('Remote description set');
+
+            // Создаем answer
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            console.log('Local description set');
+
+            // Отправляем answer ведущему
+            if (wsStream && wsStream.readyState === WebSocket.OPEN) {
+                wsStream.send(JSON.stringify({
+                    action: 'webrtc_answer',
+                    answer: peerConnection.localDescription,
+                    broadcaster_id: currentBroadcaster
+                }));
+                console.log('Answer sent to broadcaster');
+            } else {
+                console.error('WebSocket not open for sending answer');
+            }
+
+        } catch (error) {
+            console.error('Error handling WebRTC offer:', error);
+        }
+    }
+
+    // Обработка ICE candidate
+    async function handleICECandidate(data) {
+        console.log('Handling ICE candidate');
+
+        if (!peerConnection) {
+            console.log('No peer connection, storing candidate');
+            pendingIceCandidates.push(data.candidate);
+            return;
+        }
+
+        // Если remote description еще не установлен, сохраняем кандидаты
+        if (!peerConnection.remoteDescription) {
+            console.log('Remote description not set yet, storing candidate');
+            pendingIceCandidates.push(data.candidate);
+            return;
+        }
+
+        try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            console.log('ICE candidate added successfully');
+        } catch (error) {
+            console.error('Error adding ICE candidate:', error);
+        }
+    }
+
+    // ========== Функции управления трансляциями ==========
 
     // Загрузка активных трансляций
     async function loadActiveBroadcasts() {
@@ -980,7 +1146,6 @@
             updateBroadcastList(data.broadcasts);
         } catch (error) {
             console.error('Error loading broadcasts:', error);
-            // Если ошибка, показываем заглушку
             if (hostList) {
                 hostList.innerHTML = '<div class="no-broadcasts">Нет активных трансляций</div>';
             }
@@ -1060,6 +1225,8 @@
     async function joinStream(userId, username, broadcastType) {
         if (currentBroadcaster === userId) return;
 
+        console.log('Joining stream of:', userId, username);
+
         // Отключаемся от предыдущей трансляции
         if (currentBroadcaster) {
             disconnectFromStream();
@@ -1103,7 +1270,7 @@
             <p>Подключение к трансляции ${escapeHtml(username)}...</p>
         `;
 
-        // Создаем WebRTC подключение
+        // Создаем WebRTC подключение (но не ждем offer сразу)
         await createPeerConnection();
 
         // Отправляем запрос на подключение
@@ -1112,13 +1279,19 @@
                 action: 'join_stream',
                 user_id: userId
             }));
+            console.log('Join stream request sent');
+        } else {
+            console.error('WebSocket not open');
+            showNotification('Нет подключения к серверу', 'error');
         }
 
-        showNotification(`Подключение к трансляции ${username}`, 'info', 'Подключение');
+        showNotification(`Подключение к трансляции ${username}...`, 'info');
     }
 
     // Отключение от трансляции
     function disconnectFromStream() {
+        console.log('Disconnecting from stream');
+
         if (peerConnection) {
             peerConnection.close();
             peerConnection = null;
@@ -1131,6 +1304,7 @@
         }
 
         currentBroadcaster = null;
+        pendingIceCandidates = [];
 
         // Сбрасываем UI
         audioPlayer.style.display = 'none';
@@ -1153,77 +1327,7 @@
         recordVoiceBtn.disabled = true;
     }
 
-    // Создание WebRTC соединения
-    async function createPeerConnection() {
-        peerConnection = new RTCPeerConnection(config);
-
-        peerConnection.ontrack = (event) => {
-            console.log('Received track:', event.track.kind);
-            if (event.track.kind === 'video') {
-                remoteVideo.style.display = 'block';
-                mediaPlaceholder.style.display = 'none';
-                remoteVideo.srcObject = event.streams[0];
-            } else if (event.track.kind === 'audio') {
-                audioPlayer.style.display = 'none';
-                if (remoteVideo.srcObject) {
-                    // Если есть видео, добавляем аудио к нему
-                    const stream = remoteVideo.srcObject;
-                    stream.addTrack(event.track);
-                } else {
-                    // Только аудио
-                    audioPlayer.style.display = 'block';
-                    const audioStream = new MediaStream([event.track]);
-                    audioPlayer.srcObject = audioStream;
-                    mediaPlaceholder.style.display = 'none';
-                }
-            }
-        };
-
-        peerConnection.onicecandidate = (event) => {
-            if (event.candidate && wsStream && wsStream.readyState === WebSocket.OPEN && currentBroadcaster) {
-                wsStream.send(JSON.stringify({
-                    action: 'ice_candidate',
-                    candidate: event.candidate,
-                    broadcaster_id: currentBroadcaster
-                }));
-            }
-        };
-
-        peerConnection.onconnectionstatechange = () => {
-            console.log('Connection state:', peerConnection.connectionState);
-            if (peerConnection.connectionState === 'connected') {
-                currentStreamDesc.innerHTML = `
-                    <span>🎬 Трансляция активна</span>
-                    <span class="stream-meta">
-                        <span class="listener-count">👥 Слушаем...</span>
-                    </span>
-                `;
-            } else if (peerConnection.connectionState === 'disconnected') {
-                showNotification('Соединение потеряно', 'error');
-            }
-        };
-    }
-
-    // Обработка WebRTC offer
-    async function handleWebRTCOffer(data) {
-        if (!peerConnection || currentBroadcaster !== data.user_id) return;
-
-        try {
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-
-            if (wsStream && wsStream.readyState === WebSocket.OPEN) {
-                wsStream.send(JSON.stringify({
-                    action: 'webrtc_answer',
-                    answer: answer,
-                    broadcaster_id: currentBroadcaster
-                }));
-            }
-        } catch (error) {
-            console.error('Error handling offer:', error);
-        }
-    }
+    // ========== Сообщения и голосовые ==========
 
     // Отправка текстового сообщения
     async function sendTextMessage() {
@@ -1355,6 +1459,8 @@
         return div.innerHTML;
     }
 
+    // ========== Инициализация ==========
+
     // Обработчики событий
     playPauseBtn.addEventListener('click', togglePlayPause);
     volumeSlider.addEventListener('input', (e) => setVolume(e.target.value));
@@ -1400,11 +1506,29 @@
     // Обновление списка трансляций каждые 10 секунд
     setInterval(loadActiveBroadcasts, 10000);
 
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+    // Добавьте в конец файла, перед закрывающим тегом script
+    window.debugPlayer = function() {
+        console.log('=== Player Debug ===');
+        console.log('wsStream state:', wsStream ? wsStream.readyState : 'null');
+        console.log('peerConnection:', peerConnection ? peerConnection.signalingState : 'null');
+        console.log('currentBroadcaster:', currentBroadcaster);
+        console.log('pendingIceCandidates:', pendingIceCandidates.length);
+        console.log('===================');
+    };
+
+    // Добавьте в консоль ведущего
+    window.debugBroadcast = function() {
+        console.log('=== Broadcast Debug ===');
+        console.log('wsBroadcast state:', wsBroadcast ? wsBroadcast.readyState : 'null');
+        console.log('isBroadcastActive:', isBroadcastActive);
+        console.log('localStream:', localStream);
+        console.log('peerConnections size:', peerConnections.size);
+        if (peerConnections.size > 0) {
+            for (let [id, pc] of peerConnections) {
+                console.log(`  Listener ${id}:`, pc.connectionState, pc.signalingState);
+            }
+        }
+        console.log('======================');
+    };
 </script>
 {% endblock %}
